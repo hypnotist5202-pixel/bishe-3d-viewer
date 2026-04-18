@@ -4,7 +4,7 @@
 
 import { NodeIO } from '@gltf-transform/core';
 import { prune, dedup } from '@gltf-transform/functions';
-import { KHRMaterialsSpecular } from '@gltf-transform/extensions';
+import { ALL_EXTENSIONS, KHRMaterialsSpecular } from '@gltf-transform/extensions';
 import { writeFileSync } from 'node:fs';
 
 // 零件 → 三个 glb 的 mesh index 映射（V 数指纹识别得出）
@@ -22,9 +22,9 @@ const PART_MAP = {
 
 // PBR 材质参数（用户指定 2026-04-18）
 const MAT = {
-  '上盖':   { name: 'pg-petg-black-matte',  color: [0, 0, 0, 1], metallic: 0.0,  roughness: 0.95 }, // 近纯黑磨砂 PETG（抗环境光拉亮）
-  '底座':   { name: 'pg-petg-black-matte',  color: [0, 0, 0, 1], metallic: 0.0,  roughness: 0.95 },
-  '限位环': { name: 'pg-petg-black-matte',  color: [0, 0, 0, 1], metallic: 0.0,  roughness: 0.95 },
+  '上盖':   { name: 'pg-petg-black-matte',  color: [0, 0, 0, 1], metallic: 0.0,  roughness: 0.98, killSpecular: true }, // 纯黑哑光 + 关菲涅尔
+  '底座':   { name: 'pg-petg-black-matte',  color: [0, 0, 0, 1], metallic: 0.0,  roughness: 0.98, killSpecular: true },
+  '限位环': { name: 'pg-petg-black-matte',  color: [0, 0, 0, 1], metallic: 0.0,  roughness: 0.98, killSpecular: true },
   '药仓':   { name: 'pg-petg-orange-gloss', color: [0.92, 0.45, 0.08, 1], metallic: 0.05, roughness: 0.18 }, // 橙光面 PETG
   '限位盘': { name: 'pg-petg-orange-gloss', color: [0.92, 0.45, 0.08, 1], metallic: 0.05, roughness: 0.18 },
   '送药器': { name: 'pg-petg-gray-gloss',   color: [0.55, 0.55, 0.58, 1], metallic: 0.02, roughness: 0.22 }, // 灰光面 PETG
@@ -39,7 +39,7 @@ if (!fileKey || !input || !output) {
   process.exit(1);
 }
 
-const io = new NodeIO();
+const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
 const doc = await io.read(input);
 const root = doc.getRoot();
 const meshes = root.listMeshes();
