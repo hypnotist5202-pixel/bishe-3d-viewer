@@ -10,7 +10,8 @@
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0b0b; color: #eaeaea; font: 14px/1.5 -apple-system, "PingFang SC", "Helvetica Neue", system-ui, sans-serif; }
+  html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; touch-action: none; background: #0b0b0b; color: #eaeaea; font: 14px/1.5 -apple-system, "PingFang SC", "Helvetica Neue", system-ui, sans-serif; -webkit-user-select: none; user-select: none; }
+  body { position: fixed; width: 100%; }
   .stage { position: fixed; inset: 0; display: grid; grid-template-rows: auto 1fr auto; }
   header { display: flex; gap: 10px; padding: 16px 12px 8px; justify-content: center; z-index: 10; }
   .btn { background: rgba(28,28,28,.82); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid #2a2a2a; color: #c8c8c8; padding: 10px 22px; border-radius: 999px; cursor: pointer; font: inherit; letter-spacing: .04em; transition: all .2s ease; }
@@ -37,7 +38,8 @@
     src="assets/combined.glb"
     alt="无碍药盒 3D 模型"
     camera-controls
-    touch-action="pan-y"
+    touch-action="none"
+    disable-tap
     auto-rotate
     auto-rotate-delay="800"
     rotation-per-second="16deg"
