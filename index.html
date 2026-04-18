@@ -28,6 +28,11 @@
   .cta .arrow { display: inline-block; margin-right: 6px; transform: translateY(-1px); }
   .hint { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #555; letter-spacing: .14em; }
 
+  /* 微信黄色提示条 */
+  .wx-tip { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: linear-gradient(180deg, #f9d700 0%, #e5c300 100%); color: #2a2a2a; padding: 14px 20px 16px; font-size: 13px; line-height: 1.5; text-align: center; letter-spacing: .02em; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
+  .wx-tip strong { color: #d14500; font-weight: 600; }
+  .wx-tip-text { max-width: 440px; margin: 0 auto; }
+
   /* 舞台 */
   .stage { position: fixed; inset: 0; display: none; grid-template-rows: auto 1fr auto; }
   .stage.show { display: grid; }
@@ -45,6 +50,13 @@
 </style>
 </head>
 <body>
+
+<!-- 微信环境引导（仅微信 WebView 显示） -->
+<div class="wx-tip" id="wxTip" style="display:none">
+  <div class="wx-tip-text">
+    微信内置浏览器加载较慢 — 建议点右上角「···」→ 选 <strong>「在 Safari / 浏览器中打开」</strong> 以获得最佳 3D 体验
+  </div>
+</div>
 
 <!-- 首屏：0 JS 依赖，HTML 解析即显示 -->
 <div class="intro" id="intro">
@@ -97,6 +109,13 @@
 
 <script>
 (() => {
+  // 微信 WebView 检测（最高优先级，立即显示提示）
+  const ua = navigator.userAgent;
+  const isWeChat = /MicroMessenger/i.test(ua);
+  if (isWeChat) {
+    document.getElementById('wxTip').style.display = 'block';
+  }
+
   const intro = document.getElementById('intro');
   const stage = document.getElementById('stage');
   const btnStart = document.getElementById('btnStart');
@@ -105,10 +124,21 @@
   async function startStage() {
     btnStart.disabled = true;
     btnStart.innerHTML = '<span class="arrow">◌</span>准备中...';
-    // 等 model-viewer custom element 注册完（JS 可能还在下载）
-    if (!window.customElements || !customElements.get('model-viewer')) {
-      await customElements.whenDefined('model-viewer');
+
+    // 超时保护：8 秒内 JS 未就绪 → 提示换浏览器
+    const timeout = new Promise((_, rej) => setTimeout(() => rej('timeout'), 8000));
+    const ready = window.customElements && customElements.whenDefined('model-viewer');
+
+    try {
+      await Promise.race([ready, timeout]);
+    } catch (e) {
+      btnStart.innerHTML = '加载缓慢，请用 Safari 打开 ↗';
+      btnStart.disabled = false;
+      btnStart.style.background = '#d14500';
+      btnStart.style.color = '#fff';
+      return;
     }
+
     mv.setAttribute('src', 'assets/combined.glb');
     intro.classList.add('hide');
     stage.classList.add('show');
