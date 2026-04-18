@@ -9,10 +9,10 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='25' font-size='24'%3E%E2%9A%AA%3C/text%3E%3C/svg%3E">
 
 <!-- 关键资源从 jsDelivr CDN 拉（国内直连比 github.io 快 5 倍） -->
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@7733ab7/assets/model-viewer.min.js" crossorigin fetchpriority="high">
-<link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@7733ab7/assets/combined.glb" crossorigin="anonymous" fetchpriority="high">
-<link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@7733ab7/assets/exploded-v.glb" crossorigin="anonymous">
-<link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@7733ab7/assets/exploded-h.glb" crossorigin="anonymous">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@941659f/assets/model-viewer.min.js" crossorigin fetchpriority="high">
+<link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@941659f/assets/combined.glb" crossorigin="anonymous" fetchpriority="high">
+<link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@941659f/assets/exploded-v.glb" crossorigin="anonymous">
+<link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@941659f/assets/exploded-h.glb" crossorigin="anonymous">
 <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
 <title>无障碍药盒 · 3D 预览 | 欧阳天麒</title>
@@ -48,9 +48,9 @@
 <body>
 
 <header>
-  <button class="btn on" data-src="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@7733ab7/assets/combined.glb" disabled>成品</button>
-  <button class="btn" data-src="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@7733ab7/assets/exploded-v.glb" disabled>纵向拆解</button>
-  <button class="btn" data-src="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@7733ab7/assets/exploded-h.glb" disabled>横向分布</button>
+  <button class="btn on" data-src="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@941659f/assets/combined.glb" disabled>成品</button>
+  <button class="btn" data-src="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@941659f/assets/exploded-v.glb" disabled>纵向拆解</button>
+  <button class="btn" data-src="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@941659f/assets/exploded-h.glb" disabled>横向分布</button>
 </header>
 
 <div class="stage">
@@ -90,7 +90,7 @@
 <footer>欧阳天麒 · 无障碍药盒 · 浙江理工大学产品设计 2026</footer>
 
 <!-- model-viewer JS 从 jsDelivr CDN 加载（国内加速） -->
-<script type="module" async crossorigin src="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@7733ab7/assets/model-viewer.min.js"
+<script type="module" async crossorigin src="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@941659f/assets/model-viewer.min.js"
   onerror="document.getElementById('loaderStage').textContent = '✗ 引擎下载失败，请刷新或检查网络'"></script>
 
 <script>
@@ -155,7 +155,7 @@
       jsLoaded = true;
       clearInterval(jsTick);
       setProgress(0.3, '引擎就绪，载入模型...');
-      mv.setAttribute('src', 'https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@7733ab7/assets/combined.glb');
+      mv.setAttribute('src', 'https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@941659f/assets/combined.glb');
     } catch (e) {
       stageEl.textContent = '引擎加载失败，请用浏览器打开';
     }
