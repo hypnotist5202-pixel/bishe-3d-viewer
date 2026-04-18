@@ -1,0 +1,7 @@
+node_modules/
+*.bak
+preview-*.png
+qr-local.png
+.DS_Store
+assets/combined-raw.glb
+assets/*.tmp

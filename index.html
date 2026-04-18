@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='25' font-size='24'%3E%E2%9A%AA%3C/text%3E%3C/svg%3E">
+<title>无碍药盒 · 3D 预览 | 欧阳天麒</title>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4/dist/model-viewer.min.js"></script>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0b0b; color: #eaeaea; font: 14px/1.5 -apple-system, "PingFang SC", "Helvetica Neue", system-ui, sans-serif; }
+  .stage { position: fixed; inset: 0; display: grid; grid-template-rows: auto 1fr auto; }
+  header { display: flex; gap: 10px; padding: 16px 12px 8px; justify-content: center; z-index: 10; }
+  .btn { background: rgba(28,28,28,.82); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid #2a2a2a; color: #c8c8c8; padding: 10px 22px; border-radius: 999px; cursor: pointer; font: inherit; letter-spacing: .04em; transition: all .2s ease; }
+  .btn:hover { border-color: #4a4a4a; color: #fff; }
+  .btn.on { background: #f2f2f2; color: #0b0b0b; border-color: #f2f2f2; box-shadow: 0 8px 24px rgba(255,255,255,.08); }
+  .btn[disabled] { opacity: .32; cursor: not-allowed; }
+  .btn[disabled]:hover { border-color: #2a2a2a; color: #c8c8c8; }
+  model-viewer { width: 100%; height: 100%; background: radial-gradient(ellipse at center, #181818 0%, #0b0b0b 70%); --poster-color: transparent; }
+  footer { text-align: center; padding: 12px 10px 18px; font-size: 11px; color: #555; letter-spacing: .18em; text-transform: uppercase; }
+  .hint { position: fixed; bottom: 54px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #666; letter-spacing: .12em; pointer-events: none; opacity: 0; animation: fadeIn 1.2s ease .8s forwards; }
+  @keyframes fadeIn { to { opacity: .9; } }
+  .spinner { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 28px; height: 28px; border: 2px solid #2a2a2a; border-top-color: #eaeaea; border-radius: 50%; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="stage">
+  <header>
+    <button class="btn on" data-src="assets/combined.glb" data-label="成品">成品</button>
+    <button class="btn" data-src="assets/exploded.glb" data-label="爆炸图" id="btnExploded" disabled title="待上传">爆炸图</button>
+  </header>
+  <model-viewer
+    id="mv"
+    src="assets/combined.glb"
+    alt="无碍药盒 3D 模型"
+    camera-controls
+    touch-action="pan-y"
+    auto-rotate
+    auto-rotate-delay="800"
+    rotation-per-second="16deg"
+    interaction-prompt="none"
+    ar
+    ar-modes="webxr scene-viewer quick-look"
+    environment-image="neutral"
+    shadow-intensity="1.1"
+    shadow-softness="0.8"
+    exposure="1.05"
+    bounds="tight"
+    camera-orbit="25deg 68deg 95%"
+    field-of-view="30deg"
+    min-camera-orbit="auto auto 55%"
+    max-camera-orbit="auto auto 260%">
+    <div class="spinner" slot="progress-bar"></div>
+  </model-viewer>
+  <div class="hint">拖动旋转 · 双指缩放</div>
+  <footer>欧阳天麒 · 无碍药盒 · 中国计量大学 2026</footer>
+</div>
+<script>
+  const mv = document.getElementById('mv');
+  const btns = document.querySelectorAll('.btn');
+  btns.forEach(b => {
+    b.addEventListener('click', () => {
+      if (b.disabled) return;
+      btns.forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      mv.src = b.dataset.src;
+    });
+  });
+  mv.addEventListener('load', () => {
+    const sp = mv.querySelector('.spinner');
+    if (sp) sp.style.display = 'none';
+    mv.updateFraming && mv.updateFraming();
+  });
+</script>
+</body>
+</html>
