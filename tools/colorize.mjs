@@ -21,9 +21,9 @@ const PART_MAP = {
 
 // PBR 材质参数（用户指定 2026-04-18）
 const MAT = {
-  '上盖':   { name: 'pg-petg-black-matte',  color: [0.035, 0.035, 0.045, 1], metallic: 0.0,  roughness: 0.92 }, // 深黑磨砂 PETG
-  '底座':   { name: 'pg-petg-black-matte',  color: [0.035, 0.035, 0.045, 1], metallic: 0.0,  roughness: 0.92 },
-  '限位环': { name: 'pg-petg-black-matte',  color: [0.035, 0.035, 0.045, 1], metallic: 0.0,  roughness: 0.92 },
+  '上盖':   { name: 'pg-petg-black-matte',  color: [0.010, 0.010, 0.012, 1], metallic: 0.0,  roughness: 0.95 }, // 近纯黑磨砂 PETG（抗环境光拉亮）
+  '底座':   { name: 'pg-petg-black-matte',  color: [0.010, 0.010, 0.012, 1], metallic: 0.0,  roughness: 0.95 },
+  '限位环': { name: 'pg-petg-black-matte',  color: [0.010, 0.010, 0.012, 1], metallic: 0.0,  roughness: 0.95 },
   '药仓':   { name: 'pg-petg-orange-gloss', color: [0.92, 0.45, 0.08, 1], metallic: 0.05, roughness: 0.18 }, // 橙光面 PETG
   '限位盘': { name: 'pg-petg-orange-gloss', color: [0.92, 0.45, 0.08, 1], metallic: 0.05, roughness: 0.18 },
   '送药器': { name: 'pg-petg-gray-gloss',   color: [0.55, 0.55, 0.58, 1], metallic: 0.02, roughness: 0.22 }, // 灰光面 PETG
