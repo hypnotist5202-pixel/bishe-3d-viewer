@@ -2,141 +2,179 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=4,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b0b0b">
+<meta http-equiv="Cache-Control" content="no-cache">
+<meta http-equiv="Pragma" content="no-cache">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='25' font-size='24'%3E%E2%9A%AA%3C/text%3E%3C/svg%3E">
-<link rel="preload" as="image" href="assets/poster-combined.webp" fetchpriority="high">
-<link rel="preload" as="image" href="assets/poster-exploded.webp">
-<title>无碍药盒 · 欧阳天麒 · 中国计量大学 2026</title>
+
+<!-- 关键资源并行预加载（最高优先级） -->
+<link rel="modulepreload" href="assets/model-viewer.min.js" fetchpriority="high">
+<link rel="preload" as="fetch" href="assets/combined.glb" crossorigin="anonymous" fetchpriority="high">
+<link rel="preload" as="fetch" href="assets/exploded.glb" crossorigin="anonymous">
+
+<title>无碍药盒 · 3D 预览 | 欧阳天麒</title>
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; background: #0b0b0b; color: #eaeaea; font: 14px/1.5 -apple-system, "PingFang SC", "Helvetica Neue", system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
-  body { display: flex; flex-direction: column; overflow: hidden; position: fixed; width: 100%; }
+  html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; touch-action: none; background: #0b0b0b; color: #eaeaea; font: 14px/1.5 -apple-system, "PingFang SC", "Helvetica Neue", system-ui, sans-serif; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  body { position: fixed; width: 100%; display: grid; grid-template-rows: auto 1fr auto; }
+
   header { display: flex; gap: 10px; padding: 14px 12px 8px; justify-content: center; z-index: 10; }
   .btn { background: rgba(28,28,28,.86); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid #2a2a2a; color: #c8c8c8; padding: 9px 24px; border-radius: 999px; font: inherit; letter-spacing: .04em; cursor: pointer; transition: all .2s ease; }
   .btn.on { background: #f2f2f2; color: #0b0b0b; border-color: #f2f2f2; box-shadow: 0 6px 18px rgba(255,255,255,.08); }
-  .stage { flex: 1; position: relative; overflow: hidden; background: radial-gradient(ellipse at center, #181818 0%, #0b0b0b 70%); }
-  .stage img { width: 100%; height: 100%; object-fit: contain; user-select: none; -webkit-user-select: none; -webkit-user-drag: none; pointer-events: auto; }
-  .stage img.fade { transition: opacity .18s ease; }
-  .hint { position: absolute; bottom: 56px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #666; letter-spacing: .14em; pointer-events: none; white-space: nowrap; }
+  .btn[disabled] { opacity: .5; cursor: wait; }
+
+  .stage { position: relative; overflow: hidden; background: radial-gradient(ellipse at center, #181818 0%, #0b0b0b 70%); }
+  model-viewer { width: 100%; height: 100%; background: transparent; display: block; }
+
+  /* 全屏居中加载 overlay */
+  .loader { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; pointer-events: none; transition: opacity .4s ease; z-index: 5; }
+  .loader.done { opacity: 0; pointer-events: none; }
+  .ring { position: relative; width: 92px; height: 92px; }
+  .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring .track { fill: none; stroke: #1e1e1e; stroke-width: 4; }
+  .ring .fg { fill: none; stroke: #f2f2f2; stroke-width: 4; stroke-dasharray: 276; stroke-dashoffset: 276; stroke-linecap: round; transition: stroke-dashoffset .3s ease; }
+  .ring .pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 500; color: #f0f0f0; letter-spacing: .02em; }
+  .loader-text { font-size: 12px; color: #888; letter-spacing: .2em; text-transform: uppercase; }
+  .loader-stage { font-size: 11px; color: #555; letter-spacing: .14em; margin-top: -14px; }
+
   footer { text-align: center; padding: 10px 10px 16px; font-size: 11px; color: #555; letter-spacing: .18em; text-transform: uppercase; }
-  .mode3d-btn { position: absolute; bottom: 14px; right: 14px; background: rgba(40,40,40,.88); backdrop-filter: blur(10px); color: #ccc; font-size: 11px; padding: 8px 14px; border: 1px solid #3a3a3a; border-radius: 999px; cursor: pointer; letter-spacing: .05em; transition: all .2s; }
-  .mode3d-btn:active { transform: scale(.96); }
-  .mode3d-btn[disabled] { opacity: .6; cursor: wait; }
-  model-viewer { width: 100%; height: 100%; background: transparent; display: block; --poster-color: transparent; }
-  .loading-ring { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 32px; height: 32px; border: 2px solid #2a2a2a; border-top-color: #eaeaea; border-radius: 50%; animation: spin 1s linear infinite; display: none; }
-  .loading-ring.on { display: block; }
-  @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+  .wx-tip { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: linear-gradient(180deg, #f9d700 0%, #e5c300 100%); color: #2a2a2a; padding: 10px 16px; font-size: 12px; line-height: 1.5; text-align: center; display: none; }
+  .wx-tip strong { color: #d14500; font-weight: 600; }
+  .wx-tip.show { display: block; }
 </style>
 </head>
 <body>
 
+<div class="wx-tip" id="wxTip">
+  微信加载慢 · 建议右上角「···」→ <strong>在浏览器中打开</strong>
+</div>
+
 <header>
-  <button class="btn on" data-poster="assets/poster-combined.webp" data-glb="assets/combined.glb" data-label="成品">成品</button>
-  <button class="btn" data-poster="assets/poster-exploded.webp" data-glb="assets/exploded.glb" data-label="爆炸图">爆炸图</button>
+  <button class="btn on" data-src="assets/combined.glb" disabled>成品</button>
+  <button class="btn" data-src="assets/exploded.glb" disabled>爆炸图</button>
 </header>
 
-<div class="stage" id="stage">
-  <img id="poster" class="fade" src="assets/poster-combined.webp" alt="无碍药盒 成品">
-  <div class="loading-ring" id="ring"></div>
-  <div class="hint" id="hint">双指缩放看细节 · 上方切换爆炸图</div>
-  <button class="mode3d-btn" id="btn3d">▸ 3D 交互</button>
+<div class="stage">
+  <model-viewer
+    id="mv"
+    alt="无碍药盒 3D"
+    camera-controls
+    touch-action="none"
+    disable-tap
+    interaction-prompt="none"
+    loading="eager"
+    reveal="auto"
+    environment-image="neutral"
+    shadow-intensity="1.1"
+    shadow-softness="0.8"
+    exposure="1.05"
+    bounds="tight"
+    camera-orbit="25deg 68deg 95%"
+    field-of-view="30deg"
+    min-camera-orbit="auto auto 55%"
+    max-camera-orbit="auto auto 260%">
+  </model-viewer>
+
+  <div class="loader" id="loader">
+    <div class="ring">
+      <svg viewBox="0 0 100 100">
+        <circle class="track" cx="50" cy="50" r="44"></circle>
+        <circle class="fg" id="ringFg" cx="50" cy="50" r="44"></circle>
+      </svg>
+      <div class="pct" id="pct">0%</div>
+    </div>
+    <div class="loader-text">加载 3D 模型</div>
+    <div class="loader-stage" id="loaderStage">初始化引擎中...</div>
+  </div>
 </div>
 
 <footer>欧阳天麒 · 无碍药盒 · 中国计量大学 2026</footer>
 
+<!-- model-viewer JS：async 不阻塞首屏 HTML 渲染（loader 先秒出） -->
+<script type="module" async src="assets/model-viewer.min.js"></script>
+
 <script>
 (() => {
-  const poster = document.getElementById('poster');
-  const stage = document.getElementById('stage');
-  const btns = document.querySelectorAll('header .btn');
-  const btn3d = document.getElementById('btn3d');
-  const ring = document.getElementById('ring');
-  const hint = document.getElementById('hint');
-  let mode3d = false;
-  let currentGlb = 'assets/combined.glb';
-  let currentPoster = 'assets/poster-combined.webp';
+  // 微信检测
+  if (/MicroMessenger/i.test(navigator.userAgent)) {
+    document.getElementById('wxTip').classList.add('show');
+  }
 
-  // 顶部按钮切换
+  const mv = document.getElementById('mv');
+  const loader = document.getElementById('loader');
+  const ringFg = document.getElementById('ringFg');
+  const pctEl = document.getElementById('pct');
+  const stageEl = document.getElementById('loaderStage');
+  const btns = document.querySelectorAll('header .btn');
+  const CIRCUM = 276;
+
+  let jsLoaded = false;
+  let glbLoaded = false;
+
+  function setProgress(p, stage) {
+    p = Math.max(0, Math.min(1, p));
+    ringFg.style.strokeDashoffset = String(CIRCUM * (1 - p));
+    pctEl.textContent = Math.round(p * 100) + '%';
+    if (stage) stageEl.textContent = stage;
+  }
+
+  function hideLoader() {
+    setProgress(1);
+    setTimeout(() => loader.classList.add('done'), 200);
+    btns.forEach(b => b.disabled = false);
+  }
+
+  // 按钮切换
   btns.forEach(b => b.addEventListener('click', () => {
-    if (b.classList.contains('on')) return;
+    if (b.classList.contains('on') || b.disabled) return;
     btns.forEach(x => x.classList.remove('on'));
     b.classList.add('on');
-    currentGlb = b.dataset.glb;
-    currentPoster = b.dataset.poster;
-    if (mode3d) {
-      const mv = document.getElementById('mv');
-      if (mv) mv.setAttribute('src', currentGlb);
-    } else {
-      poster.src = currentPoster;
-    }
+    mv.setAttribute('src', b.dataset.src);
   }));
 
-  // 3D 交互模式按钮
-  btn3d.addEventListener('click', async () => {
-    if (mode3d) return;
-    btn3d.textContent = '⏳ 加载中...';
-    btn3d.disabled = true;
-    ring.classList.add('on');
-
-    // 动态加载 model-viewer
-    try {
-      await new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.type = 'module';
-        s.src = 'assets/model-viewer.min.js';
-        s.onerror = () => reject(new Error('script load error'));
-        document.head.appendChild(s);
-        const timeout = setTimeout(() => reject(new Error('timeout')), 20000);
-        const check = () => {
-          if (window.customElements && customElements.get('model-viewer')) {
-            clearTimeout(timeout);
-            resolve();
-          } else setTimeout(check, 120);
-        };
-        check();
-      });
-    } catch (e) {
-      ring.classList.remove('on');
-      btn3d.textContent = '加载失败，继续看图';
-      btn3d.disabled = false;
-      setTimeout(() => { btn3d.textContent = '▸ 重试 3D'; btn3d.disabled = false; }, 3000);
-      return;
-    }
-
-    // 创建 model-viewer
-    const mv = document.createElement('model-viewer');
-    mv.id = 'mv';
-    mv.setAttribute('src', currentGlb);
-    mv.setAttribute('alt', '无碍药盒 3D');
-    mv.setAttribute('camera-controls', '');
-    mv.setAttribute('touch-action', 'none');
-    mv.setAttribute('disable-tap', '');
-    mv.setAttribute('interaction-prompt', 'none');
-    mv.setAttribute('environment-image', 'neutral');
-    mv.setAttribute('shadow-intensity', '1.1');
-    mv.setAttribute('shadow-softness', '0.8');
-    mv.setAttribute('exposure', '1.05');
-    mv.setAttribute('bounds', 'tight');
-    mv.setAttribute('camera-orbit', '25deg 68deg 95%');
-    mv.setAttribute('field-of-view', '30deg');
-    mv.setAttribute('min-camera-orbit', 'auto auto 55%');
-    mv.setAttribute('max-camera-orbit', 'auto auto 260%');
-    stage.insertBefore(mv, hint);
-    mv.addEventListener('load', () => {
-      ring.classList.remove('on');
-      poster.style.display = 'none';
-      btn3d.textContent = '● 3D 已开启';
-      hint.textContent = '拖动旋转 · 双指缩放 · 上方切换';
-      mode3d = true;
-    }, { once: true });
-    mv.addEventListener('error', () => {
-      ring.classList.remove('on');
-      btn3d.textContent = '3D 加载失败';
-      btn3d.disabled = false;
-    }, { once: true });
+  // model-viewer progress 事件（glb 下载+解析）
+  mv.addEventListener('progress', (e) => {
+    const p = e.detail.totalProgress || 0;
+    // JS 已就绪之后，进度映射到 30%~100%
+    const displayed = jsLoaded ? (0.3 + p * 0.7) : 0.3 * p;
+    setProgress(displayed, p < 1 ? '载入模型 ' + Math.round(p*100) + '%' : '渲染中...');
   });
+  mv.addEventListener('load', () => {
+    glbLoaded = true;
+    if (mv.updateFraming) mv.updateFraming();
+    hideLoader();
+  }, { once: true });
+
+  // JS 加载进度监控：轮询 customElements
+  let jsProgress = 0;
+  const jsTick = setInterval(() => {
+    jsProgress = Math.min(0.28, jsProgress + 0.015);
+    if (!jsLoaded) setProgress(jsProgress, '加载 3D 引擎...');
+  }, 180);
+
+  (async () => {
+    try {
+      if (!window.customElements || !customElements.get('model-viewer')) {
+        await customElements.whenDefined('model-viewer');
+      }
+      jsLoaded = true;
+      clearInterval(jsTick);
+      setProgress(0.3, '引擎就绪，载入模型...');
+      mv.setAttribute('src', 'assets/combined.glb');
+    } catch (e) {
+      stageEl.textContent = '引擎加载失败，请用浏览器打开';
+    }
+  })();
+
+  // 超时降级（20 秒）
+  setTimeout(() => {
+    if (!glbLoaded) {
+      stageEl.innerHTML = '网络较慢，建议用<br>浏览器打开（右上···菜单）';
+    }
+  }, 20000);
 })();
 </script>
 
