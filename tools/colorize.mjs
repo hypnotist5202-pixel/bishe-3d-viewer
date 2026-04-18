@@ -4,6 +4,7 @@
 
 import { NodeIO } from '@gltf-transform/core';
 import { prune, dedup } from '@gltf-transform/functions';
+import { KHRMaterialsSpecular } from '@gltf-transform/extensions';
 import { writeFileSync } from 'node:fs';
 
 // 零件 → 三个 glb 的 mesh index 映射（V 数指纹识别得出）
@@ -42,6 +43,7 @@ const io = new NodeIO();
 const doc = await io.read(input);
 const root = doc.getRoot();
 const meshes = root.listMeshes();
+const specularExt = doc.createExtension(KHRMaterialsSpecular);
 
 // 为每种材质创建共享 Material，按零件名映射上色
 const matCache = {};
@@ -57,14 +59,20 @@ for (const [partName, indices] of Object.entries(PART_MAP)) {
   }
   const spec = MAT[partName];
   if (!matCache[spec.name]) {
-    matCache[spec.name] = doc.createMaterial(spec.name)
+    const m = doc.createMaterial(spec.name)
       .setBaseColorFactor(spec.color)
       .setMetallicFactor(spec.metallic)
       .setRoughnessFactor(spec.roughness);
+    if (spec.killSpecular) {
+      const s = specularExt.createSpecular().setSpecularFactor(0).setSpecularColorFactor([0,0,0]);
+      m.setExtension('KHR_materials_specular', s);
+    }
+    matCache[spec.name] = m;
   }
   const mat = matCache[spec.name];
   mesh.listPrimitives().forEach(p => p.setMaterial(mat));
-  console.log(`  ✓ ${partName.padEnd(4)} → mesh[${meshIdx}] 材质=${spec.name}`);
+  const tag = spec.killSpecular ? '[kill-specular]' : '';
+  console.log(`  ✓ ${partName.padEnd(4)} → mesh[${meshIdx}] 材质=${spec.name} ${tag}`);
   colored++;
 }
 
