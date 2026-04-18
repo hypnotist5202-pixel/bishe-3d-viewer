@@ -13,7 +13,7 @@
 <link rel="preload" as="fetch" href="assets/combined.glb" crossorigin="anonymous" fetchpriority="high">
 <link rel="preload" as="fetch" href="assets/exploded.glb" crossorigin="anonymous">
 
-<title>无碍药盒 · 3D 预览 | 欧阳天麒</title>
+<title>无障碍药盒 · 3D 预览 | 欧阳天麒</title>
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
@@ -41,16 +41,9 @@
 
   footer { text-align: center; padding: 10px 10px 16px; font-size: 11px; color: #555; letter-spacing: .18em; text-transform: uppercase; }
 
-  .wx-tip { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: linear-gradient(180deg, #f9d700 0%, #e5c300 100%); color: #2a2a2a; padding: 10px 16px; font-size: 12px; line-height: 1.5; text-align: center; display: none; }
-  .wx-tip strong { color: #d14500; font-weight: 600; }
-  .wx-tip.show { display: block; }
 </style>
 </head>
 <body>
-
-<div class="wx-tip" id="wxTip">
-  微信加载慢 · 建议右上角「···」→ <strong>在浏览器中打开</strong>
-</div>
 
 <header>
   <button class="btn on" data-src="assets/combined.glb" disabled>成品</button>
@@ -60,7 +53,7 @@
 <div class="stage">
   <model-viewer
     id="mv"
-    alt="无碍药盒 3D"
+    alt="无障碍药盒 3D"
     camera-controls
     touch-action="none"
     disable-tap
@@ -91,18 +84,13 @@
   </div>
 </div>
 
-<footer>欧阳天麒 · 无碍药盒 · 中国计量大学 2026</footer>
+<footer>欧阳天麒 · 无障碍药盒 · 浙江理工大学产品设计 2026</footer>
 
 <!-- model-viewer JS：async 不阻塞首屏 HTML 渲染（loader 先秒出） -->
 <script type="module" async src="assets/model-viewer.min.js"></script>
 
 <script>
 (() => {
-  // 微信检测
-  if (/MicroMessenger/i.test(navigator.userAgent)) {
-    document.getElementById('wxTip').classList.add('show');
-  }
-
   const mv = document.getElementById('mv');
   const loader = document.getElementById('loader');
   const ringFg = document.getElementById('ringFg');
