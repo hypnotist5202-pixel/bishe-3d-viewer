@@ -11,7 +11,8 @@
 <!-- 关键资源并行预加载（最高优先级） -->
 <link rel="modulepreload" href="assets/model-viewer.min.js" fetchpriority="high">
 <link rel="preload" as="fetch" href="assets/combined.glb" crossorigin="anonymous" fetchpriority="high">
-<link rel="preload" as="fetch" href="assets/exploded.glb" crossorigin="anonymous">
+<link rel="preload" as="fetch" href="assets/exploded-v.glb" crossorigin="anonymous">
+<link rel="preload" as="fetch" href="assets/exploded-h.glb" crossorigin="anonymous">
 
 <title>无障碍药盒 · 3D 预览 | 欧阳天麒</title>
 <style>
@@ -20,8 +21,8 @@
   html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; touch-action: none; background: #0b0b0b; color: #eaeaea; font: 14px/1.5 -apple-system, "PingFang SC", "Helvetica Neue", system-ui, sans-serif; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
   body { position: fixed; width: 100%; display: grid; grid-template-rows: auto 1fr auto; }
 
-  header { display: flex; gap: 10px; padding: 14px 12px 8px; justify-content: center; z-index: 10; }
-  .btn { background: rgba(28,28,28,.86); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid #2a2a2a; color: #c8c8c8; padding: 9px 24px; border-radius: 999px; font: inherit; letter-spacing: .04em; cursor: pointer; transition: all .2s ease; }
+  header { display: flex; gap: 8px; padding: 14px 10px 8px; justify-content: center; flex-wrap: wrap; z-index: 10; }
+  .btn { background: rgba(28,28,28,.86); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid #2a2a2a; color: #c8c8c8; padding: 9px 18px; border-radius: 999px; font: inherit; font-size: 13px; letter-spacing: .04em; cursor: pointer; transition: all .2s ease; white-space: nowrap; }
   .btn.on { background: #f2f2f2; color: #0b0b0b; border-color: #f2f2f2; box-shadow: 0 6px 18px rgba(255,255,255,.08); }
   .btn[disabled] { opacity: .5; cursor: wait; }
 
@@ -47,7 +48,8 @@
 
 <header>
   <button class="btn on" data-src="assets/combined.glb" disabled>成品</button>
-  <button class="btn" data-src="assets/exploded.glb" disabled>爆炸图</button>
+  <button class="btn" data-src="assets/exploded-v.glb" disabled>纵向拆解</button>
+  <button class="btn" data-src="assets/exploded-h.glb" disabled>横向分布</button>
 </header>
 
 <div class="stage">
