@@ -3,5 +3,6 @@ node_modules/
 preview-*.png
 qr-local.png
 .DS_Store
-assets/combined-raw.glb
+assets/*-raw.glb
+qr-public.png
 assets/*.tmp

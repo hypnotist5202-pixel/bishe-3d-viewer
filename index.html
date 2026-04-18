@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b0b0b">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='25' font-size='24'%3E%E2%9A%AA%3C/text%3E%3C/svg%3E">
+<link rel="preload" as="fetch" href="assets/combined.glb" crossorigin="anonymous" fetchpriority="high">
+<link rel="preload" as="fetch" href="assets/exploded.glb" crossorigin="anonymous">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <title>无碍药盒 · 3D 预览 | 欧阳天麒</title>
 <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4/dist/model-viewer.min.js"></script>
 <style>
@@ -23,8 +26,12 @@
   footer { text-align: center; padding: 12px 10px 18px; font-size: 11px; color: #555; letter-spacing: .18em; text-transform: uppercase; }
   .hint { position: fixed; bottom: 54px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #666; letter-spacing: .12em; pointer-events: none; opacity: 0; animation: fadeIn 1.2s ease .8s forwards; }
   @keyframes fadeIn { to { opacity: .9; } }
-  .spinner { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 28px; height: 28px; border: 2px solid #2a2a2a; border-top-color: #eaeaea; border-radius: 50%; animation: spin 1s linear infinite; }
-  @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+  .progress-wrap { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; pointer-events: none; }
+  .progress-ring { width: 48px; height: 48px; transform: rotate(-90deg); }
+  .progress-ring circle { fill: none; stroke-width: 3; }
+  .progress-ring .bg { stroke: #222; }
+  .progress-ring .fg { stroke: #eaeaea; stroke-dasharray: 138; stroke-dashoffset: 138; stroke-linecap: round; transition: stroke-dashoffset .25s ease; }
+  .progress-text { margin-top: 10px; font-size: 11px; color: #777; letter-spacing: .12em; }
 </style>
 </head>
 <body>
@@ -40,10 +47,9 @@
     camera-controls
     touch-action="none"
     disable-tap
-    auto-rotate
-    auto-rotate-delay="800"
-    rotation-per-second="16deg"
     interaction-prompt="none"
+    loading="eager"
+    reveal="auto"
     ar
     ar-modes="webxr scene-viewer quick-look"
     environment-image="neutral"
@@ -55,7 +61,13 @@
     field-of-view="30deg"
     min-camera-orbit="auto auto 55%"
     max-camera-orbit="auto auto 260%">
-    <div class="spinner" slot="progress-bar"></div>
+    <div class="progress-wrap" slot="progress-bar">
+      <svg class="progress-ring" viewBox="0 0 48 48">
+        <circle class="bg" cx="24" cy="24" r="22"></circle>
+        <circle class="fg" cx="24" cy="24" r="22"></circle>
+      </svg>
+      <div class="progress-text">加载中 <span id="pct">0</span>%</div>
+    </div>
   </model-viewer>
   <div class="hint">拖动旋转 · 双指缩放</div>
   <footer>欧阳天麒 · 无碍药盒 · 中国计量大学 2026</footer>
@@ -71,9 +83,18 @@
       mv.src = b.dataset.src;
     });
   });
+  const ring = mv.querySelector('.progress-ring .fg');
+  const pctEl = mv.querySelector('#pct');
+  const wrap = mv.querySelector('.progress-wrap');
+  const CIRCUM = 138;
+  mv.addEventListener('progress', (e) => {
+    const p = Math.max(0, Math.min(1, e.detail.totalProgress || 0));
+    if (ring) ring.style.strokeDashoffset = String(CIRCUM * (1 - p));
+    if (pctEl) pctEl.textContent = Math.round(p * 100);
+    if (p >= 1 && wrap) wrap.style.display = 'none';
+  });
   mv.addEventListener('load', () => {
-    const sp = mv.querySelector('.spinner');
-    if (sp) sp.style.display = 'none';
+    if (wrap) wrap.style.display = 'none';
     mv.updateFraming && mv.updateFraming();
   });
 </script>
