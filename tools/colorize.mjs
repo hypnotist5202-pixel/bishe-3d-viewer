@@ -22,9 +22,9 @@ const PART_MAP = {
 
 // PBR 材质参数（用户指定 2026-04-18）
 const MAT = {
-  '上盖':   { name: 'pg-petg-black-matte',  color: [0.05, 0.05, 0.055, 1], metallic: 0.0,  roughness: 0.92, killSpecular: true }, // 纯黑哑光 + 关菲涅尔
-  '底座':   { name: 'pg-petg-black-matte',  color: [0.05, 0.05, 0.055, 1], metallic: 0.0,  roughness: 0.92, killSpecular: true },
-  '限位环': { name: 'pg-petg-black-matte',  color: [0.05, 0.05, 0.055, 1], metallic: 0.0,  roughness: 0.92, killSpecular: true },
+  '上盖':   { name: 'pg-petg-black-matte',  color: [0.13, 0.13, 0.14, 1], metallic: 0.0,  roughness: 0.9, killSpecular: true }, // 纯黑哑光 + 关菲涅尔
+  '底座':   { name: 'pg-petg-black-matte',  color: [0.13, 0.13, 0.14, 1], metallic: 0.0,  roughness: 0.9, killSpecular: true },
+  '限位环': { name: 'pg-petg-black-matte',  color: [0.13, 0.13, 0.14, 1], metallic: 0.0,  roughness: 0.9, killSpecular: true },
   '药仓':   { name: 'pg-petg-orange-gloss', color: [0.92, 0.45, 0.08, 1], metallic: 0.05, roughness: 0.18 }, // 橙光面 PETG
   '限位盘': { name: 'pg-petg-orange-gloss', color: [0.92, 0.45, 0.08, 1], metallic: 0.05, roughness: 0.18 },
   '送药器': { name: 'pg-petg-gray-gloss',   color: [0.55, 0.55, 0.58, 1], metallic: 0.02, roughness: 0.22 }, // 灰光面 PETG
