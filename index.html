@@ -2,173 +2,140 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=4,viewport-fit=cover">
 <meta name="theme-color" content="#0b0b0b">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='25' font-size='24'%3E%E2%9A%AA%3C/text%3E%3C/svg%3E">
-<link rel="preload" as="fetch" href="assets/combined.glb" crossorigin="anonymous" fetchpriority="high">
-<link rel="preload" as="fetch" href="assets/exploded.glb" crossorigin="anonymous">
-<title>无碍药盒 · 3D 预览 | 欧阳天麒</title>
+<link rel="preload" as="image" href="assets/poster-combined.webp" fetchpriority="high">
+<link rel="preload" as="image" href="assets/poster-exploded.webp">
+<title>无碍药盒 · 欧阳天麒 · 中国计量大学 2026</title>
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; touch-action: none; background: #0b0b0b; color: #eaeaea; font: 14px/1.5 -apple-system, "PingFang SC", "Helvetica Neue", system-ui, sans-serif; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
-  body { position: fixed; width: 100%; }
-
-  /* 首屏 intro（极简，立即可见，0 JS 依赖） */
-  .intro { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center; background: radial-gradient(ellipse at center, #1a1a1a 0%, #0b0b0b 70%); opacity: 1; transition: opacity .35s ease; }
-  .intro.hide { opacity: 0; pointer-events: none; }
-  .mock { width: min(58vw, 280px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 35% 28%, #fafafa 0%, #c8c8c8 55%, #7a7a7a 100%); box-shadow: 0 40px 90px rgba(0,0,0,.7), inset 0 -25px 50px rgba(0,0,0,.18); position: relative; margin-bottom: 44px; }
-  .mock::before { content: ''; position: absolute; inset: 14%; border-radius: 50%; background: linear-gradient(135deg, #e8e8e8 0%, #9a9a9a 100%); box-shadow: inset 0 8px 20px rgba(255,255,255,.18), inset 0 -8px 20px rgba(0,0,0,.2); }
-  .mock::after { content: ''; position: absolute; top: 20%; left: 32%; width: 32%; height: 32%; border-radius: 50%; background: rgba(255,255,255,.55); filter: blur(22px); }
-  .title { font-size: 22px; font-weight: 500; letter-spacing: .1em; margin: 0 0 6px; color: #f0f0f0; }
-  .sub { font-size: 12px; color: #888; letter-spacing: .14em; margin: 0 0 36px; }
-  .cta { background: #f2f2f2; color: #0b0b0b; border: none; padding: 15px 36px; border-radius: 999px; font: 500 14px/1 inherit; letter-spacing: .08em; cursor: pointer; box-shadow: 0 14px 32px rgba(255,255,255,.14); transition: transform .15s ease, background .2s ease; }
-  .cta:active { transform: scale(.96); }
-  .cta[disabled] { background: #444; color: #999; cursor: wait; box-shadow: none; }
-  .cta .arrow { display: inline-block; margin-right: 6px; transform: translateY(-1px); }
-  .hint { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #555; letter-spacing: .14em; }
-
-  /* 微信黄色提示条 */
-  .wx-tip { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: linear-gradient(180deg, #f9d700 0%, #e5c300 100%); color: #2a2a2a; padding: 14px 20px 16px; font-size: 13px; line-height: 1.5; text-align: center; letter-spacing: .02em; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
-  .wx-tip strong { color: #d14500; font-weight: 600; }
-  .wx-tip-text { max-width: 440px; margin: 0 auto; }
-
-  /* 舞台 */
-  .stage { position: fixed; inset: 0; display: none; grid-template-rows: auto 1fr auto; }
-  .stage.show { display: grid; }
-  header { display: flex; gap: 10px; padding: 16px 12px 8px; justify-content: center; z-index: 10; }
-  .btn { background: rgba(28,28,28,.82); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid #2a2a2a; color: #c8c8c8; padding: 10px 22px; border-radius: 999px; cursor: pointer; font: inherit; letter-spacing: .04em; transition: all .2s ease; }
-  .btn.on { background: #f2f2f2; color: #0b0b0b; border-color: #f2f2f2; box-shadow: 0 8px 24px rgba(255,255,255,.08); }
-  model-viewer { width: 100%; height: 100%; background: radial-gradient(ellipse at center, #181818 0%, #0b0b0b 70%); }
-  footer { text-align: center; padding: 12px 10px 18px; font-size: 11px; color: #555; letter-spacing: .18em; text-transform: uppercase; }
-  .progress-wrap { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; pointer-events: none; }
-  .progress-ring { width: 48px; height: 48px; transform: rotate(-90deg); }
-  .progress-ring circle { fill: none; stroke-width: 3; }
-  .progress-ring .bg { stroke: #222; }
-  .progress-ring .fg { stroke: #eaeaea; stroke-dasharray: 138; stroke-dashoffset: 138; stroke-linecap: round; transition: stroke-dashoffset .25s ease; }
-  .progress-text { margin-top: 10px; font-size: 11px; color: #777; letter-spacing: .12em; }
+  html, body { margin: 0; height: 100%; background: #0b0b0b; color: #eaeaea; font: 14px/1.5 -apple-system, "PingFang SC", "Helvetica Neue", system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+  body { display: flex; flex-direction: column; overflow: hidden; position: fixed; width: 100%; }
+  header { display: flex; gap: 10px; padding: 14px 12px 8px; justify-content: center; z-index: 10; }
+  .btn { background: rgba(28,28,28,.86); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid #2a2a2a; color: #c8c8c8; padding: 9px 24px; border-radius: 999px; font: inherit; letter-spacing: .04em; cursor: pointer; transition: all .2s ease; }
+  .btn.on { background: #f2f2f2; color: #0b0b0b; border-color: #f2f2f2; box-shadow: 0 6px 18px rgba(255,255,255,.08); }
+  .stage { flex: 1; position: relative; overflow: hidden; background: radial-gradient(ellipse at center, #181818 0%, #0b0b0b 70%); }
+  .stage img { width: 100%; height: 100%; object-fit: contain; user-select: none; -webkit-user-select: none; -webkit-user-drag: none; pointer-events: auto; }
+  .stage img.fade { transition: opacity .18s ease; }
+  .hint { position: absolute; bottom: 56px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #666; letter-spacing: .14em; pointer-events: none; white-space: nowrap; }
+  footer { text-align: center; padding: 10px 10px 16px; font-size: 11px; color: #555; letter-spacing: .18em; text-transform: uppercase; }
+  .mode3d-btn { position: absolute; bottom: 14px; right: 14px; background: rgba(40,40,40,.88); backdrop-filter: blur(10px); color: #ccc; font-size: 11px; padding: 8px 14px; border: 1px solid #3a3a3a; border-radius: 999px; cursor: pointer; letter-spacing: .05em; transition: all .2s; }
+  .mode3d-btn:active { transform: scale(.96); }
+  .mode3d-btn[disabled] { opacity: .6; cursor: wait; }
+  model-viewer { width: 100%; height: 100%; background: transparent; display: block; --poster-color: transparent; }
+  .loading-ring { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 32px; height: 32px; border: 2px solid #2a2a2a; border-top-color: #eaeaea; border-radius: 50%; animation: spin 1s linear infinite; display: none; }
+  .loading-ring.on { display: block; }
+  @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
 </style>
 </head>
 <body>
 
-<!-- 微信环境引导（仅微信 WebView 显示） -->
-<div class="wx-tip" id="wxTip" style="display:none">
-  <div class="wx-tip-text">
-    微信内置浏览器加载较慢 — 建议点右上角「···」→ 选 <strong>「在 Safari / 浏览器中打开」</strong> 以获得最佳 3D 体验
-  </div>
-</div>
+<header>
+  <button class="btn on" data-poster="assets/poster-combined.webp" data-glb="assets/combined.glb" data-label="成品">成品</button>
+  <button class="btn" data-poster="assets/poster-exploded.webp" data-glb="assets/exploded.glb" data-label="爆炸图">爆炸图</button>
+</header>
 
-<!-- 首屏：0 JS 依赖，HTML 解析即显示 -->
-<div class="intro" id="intro">
-  <div class="mock"></div>
-  <h1 class="title">无碍药盒</h1>
-  <p class="sub">3D 交互预览 · 欧阳天麒 · 中国计量大学 2026</p>
-  <button class="cta" id="btnStart"><span class="arrow">▸</span>查看 3D 模型</button>
-  <div class="hint">点击后可 360° 旋转 · 双指缩放 · 切换爆炸图</div>
-</div>
-
-<!-- 舞台：点击后才显示并启动 model-viewer -->
 <div class="stage" id="stage">
-  <header>
-    <button class="btn on" data-src="assets/combined.glb">成品</button>
-    <button class="btn" data-src="assets/exploded.glb">爆炸图</button>
-  </header>
-  <model-viewer
-    id="mv"
-    alt="无碍药盒 3D 模型"
-    camera-controls
-    touch-action="none"
-    disable-tap
-    interaction-prompt="none"
-    loading="eager"
-    reveal="auto"
-    ar
-    ar-modes="webxr scene-viewer quick-look"
-    environment-image="neutral"
-    shadow-intensity="1.1"
-    shadow-softness="0.8"
-    exposure="1.05"
-    bounds="tight"
-    camera-orbit="25deg 68deg 95%"
-    field-of-view="30deg"
-    min-camera-orbit="auto auto 55%"
-    max-camera-orbit="auto auto 260%">
-    <div class="progress-wrap" slot="progress-bar">
-      <svg class="progress-ring" viewBox="0 0 48 48">
-        <circle class="bg" cx="24" cy="24" r="22"></circle>
-        <circle class="fg" cx="24" cy="24" r="22"></circle>
-      </svg>
-      <div class="progress-text">加载中 <span id="pct">0</span>%</div>
-    </div>
-  </model-viewer>
-  <footer>欧阳天麒 · 无碍药盒 · 中国计量大学 2026</footer>
+  <img id="poster" class="fade" src="assets/poster-combined.webp" alt="无碍药盒 成品">
+  <div class="loading-ring" id="ring"></div>
+  <div class="hint" id="hint">双指缩放看细节 · 上方切换爆炸图</div>
+  <button class="mode3d-btn" id="btn3d">▸ 3D 交互</button>
 </div>
 
-<!-- async 脚本：下载期间不阻塞首屏，用户看 intro 时后台拉 -->
-<script type="module" async src="assets/model-viewer.min.js"></script>
+<footer>欧阳天麒 · 无碍药盒 · 中国计量大学 2026</footer>
 
 <script>
 (() => {
-  // 微信 WebView 检测（最高优先级，立即显示提示）
-  const ua = navigator.userAgent;
-  const isWeChat = /MicroMessenger/i.test(ua);
-  if (isWeChat) {
-    document.getElementById('wxTip').style.display = 'block';
-  }
-
-  const intro = document.getElementById('intro');
+  const poster = document.getElementById('poster');
   const stage = document.getElementById('stage');
-  const btnStart = document.getElementById('btnStart');
-  const mv = document.getElementById('mv');
+  const btns = document.querySelectorAll('header .btn');
+  const btn3d = document.getElementById('btn3d');
+  const ring = document.getElementById('ring');
+  const hint = document.getElementById('hint');
+  let mode3d = false;
+  let currentGlb = 'assets/combined.glb';
+  let currentPoster = 'assets/poster-combined.webp';
 
-  async function startStage() {
-    btnStart.disabled = true;
-    btnStart.innerHTML = '<span class="arrow">◌</span>准备中...';
+  // 顶部按钮切换
+  btns.forEach(b => b.addEventListener('click', () => {
+    if (b.classList.contains('on')) return;
+    btns.forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    currentGlb = b.dataset.glb;
+    currentPoster = b.dataset.poster;
+    if (mode3d) {
+      const mv = document.getElementById('mv');
+      if (mv) mv.setAttribute('src', currentGlb);
+    } else {
+      poster.src = currentPoster;
+    }
+  }));
 
-    // 超时保护：8 秒内 JS 未就绪 → 提示换浏览器
-    const timeout = new Promise((_, rej) => setTimeout(() => rej('timeout'), 8000));
-    const ready = window.customElements && customElements.whenDefined('model-viewer');
+  // 3D 交互模式按钮
+  btn3d.addEventListener('click', async () => {
+    if (mode3d) return;
+    btn3d.textContent = '⏳ 加载中...';
+    btn3d.disabled = true;
+    ring.classList.add('on');
 
+    // 动态加载 model-viewer
     try {
-      await Promise.race([ready, timeout]);
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.type = 'module';
+        s.src = 'assets/model-viewer.min.js';
+        s.onerror = () => reject(new Error('script load error'));
+        document.head.appendChild(s);
+        const timeout = setTimeout(() => reject(new Error('timeout')), 20000);
+        const check = () => {
+          if (window.customElements && customElements.get('model-viewer')) {
+            clearTimeout(timeout);
+            resolve();
+          } else setTimeout(check, 120);
+        };
+        check();
+      });
     } catch (e) {
-      btnStart.innerHTML = '加载缓慢，请用 Safari 打开 ↗';
-      btnStart.disabled = false;
-      btnStart.style.background = '#d14500';
-      btnStart.style.color = '#fff';
+      ring.classList.remove('on');
+      btn3d.textContent = '加载失败，继续看图';
+      btn3d.disabled = false;
+      setTimeout(() => { btn3d.textContent = '▸ 重试 3D'; btn3d.disabled = false; }, 3000);
       return;
     }
 
-    mv.setAttribute('src', 'assets/combined.glb');
-    intro.classList.add('hide');
-    stage.classList.add('show');
-    setTimeout(() => intro.style.display = 'none', 400);
-  }
-  btnStart.addEventListener('click', startStage);
-
-  // 按钮切换
-  stage.querySelectorAll('.btn').forEach(b => {
-    b.addEventListener('click', () => {
-      if (b.classList.contains('on')) return;
-      stage.querySelectorAll('.btn').forEach(x => x.classList.remove('on'));
-      b.classList.add('on');
-      mv.setAttribute('src', b.dataset.src);
-    });
-  });
-
-  // 进度条 + load 隐藏
-  const wrap = mv.querySelector('.progress-wrap');
-  const ring = mv.querySelector('.progress-ring .fg');
-  const pct = mv.querySelector('#pct');
-  mv.addEventListener('progress', (e) => {
-    const p = Math.max(0, Math.min(1, e.detail.totalProgress || 0));
-    if (ring) ring.style.strokeDashoffset = String(138 * (1 - p));
-    if (pct) pct.textContent = Math.round(p * 100);
-    if (p >= 1 && wrap) wrap.style.display = 'none';
-  });
-  mv.addEventListener('load', () => {
-    if (wrap) wrap.style.display = 'none';
-    mv.updateFraming && mv.updateFraming();
+    // 创建 model-viewer
+    const mv = document.createElement('model-viewer');
+    mv.id = 'mv';
+    mv.setAttribute('src', currentGlb);
+    mv.setAttribute('alt', '无碍药盒 3D');
+    mv.setAttribute('camera-controls', '');
+    mv.setAttribute('touch-action', 'none');
+    mv.setAttribute('disable-tap', '');
+    mv.setAttribute('interaction-prompt', 'none');
+    mv.setAttribute('environment-image', 'neutral');
+    mv.setAttribute('shadow-intensity', '1.1');
+    mv.setAttribute('shadow-softness', '0.8');
+    mv.setAttribute('exposure', '1.05');
+    mv.setAttribute('bounds', 'tight');
+    mv.setAttribute('camera-orbit', '25deg 68deg 95%');
+    mv.setAttribute('field-of-view', '30deg');
+    mv.setAttribute('min-camera-orbit', 'auto auto 55%');
+    mv.setAttribute('max-camera-orbit', 'auto auto 260%');
+    stage.insertBefore(mv, hint);
+    mv.addEventListener('load', () => {
+      ring.classList.remove('on');
+      poster.style.display = 'none';
+      btn3d.textContent = '● 3D 已开启';
+      hint.textContent = '拖动旋转 · 双指缩放 · 上方切换';
+      mode3d = true;
+    }, { once: true });
+    mv.addEventListener('error', () => {
+      ring.classList.remove('on');
+      btn3d.textContent = '3D 加载失败';
+      btn3d.disabled = false;
+    }, { once: true });
   });
 })();
 </script>
