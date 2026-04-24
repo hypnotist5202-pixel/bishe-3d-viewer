@@ -247,20 +247,12 @@
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // 拆解演示 · 每轮 7s
+  // 拆解演示 · 单程 2s
   //   explode  2.0s   零件从成品 → 纵向爆炸（缓入缓出）
-  //   hold     1.8s   停在爆炸状态让零件看清
-  //   assemble 2.0s   从爆炸 → 合体
-  //   idle     1.2s   成品展示完整外形
+  //   结束后定格在爆炸状态，点"成品"按钮瞬切回组装
   // ═══════════════════════════════════════════════════════════════
   const easeInOut = t => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2) / 2;
-
-  const PHASES = [
-    { name: 'explode',  dur: 2000, label: '拆解' },
-    { name: 'hold',     dur: 1800, label: '展示' },
-    { name: 'assemble', dur: 2000, label: '合体' },
-    { name: 'idle',     dur: 1200, label: '成品' },
-  ];
+  const EXPLODE_DUR = 2000;
 
   let rafId = null;
   let demoRunning = false;
@@ -275,37 +267,24 @@
   function animTick(now) {
     if (!demoRunning) return;
     const elapsed = now - demoStart;
-    const cycleDur = PHASES.reduce((s, p) => s + p.dur, 0);
-    const cycleT = elapsed % cycleDur;
+    const t = Math.min(1, elapsed / EXPLODE_DUR);
 
-    // 找当前阶段
-    let acc = 0, phase = PHASES[0], phaseT = 0;
-    for (const p of PHASES) {
-      if (cycleT < acc + p.dur) {
-        phase = p;
-        phaseT = (cycleT - acc) / p.dur; // 0..1 in phase
-        break;
-      }
-      acc += p.dur;
-    }
-
-    // 零件爆炸度 0..1
-    let explodeAmount = 0;
-    if (phase.name === 'explode')       explodeAmount = easeInOut(phaseT);
-    else if (phase.name === 'hold')     explodeAmount = 1;
-    else if (phase.name === 'assemble') explodeAmount = 1 - easeInOut(phaseT);
-    else /* idle */                     explodeAmount = 0;
-    lerpToState(explodeAmount);
-
-    // 确保外壳全不透明（删除透明度效果，拆解模式下零件已经分离看得清）
+    lerpToState(easeInOut(t));
     setShellOpacity(1.0);
-
     requestRender();
 
-    // 阶段文字提示
-    setPhaseLabel(phase.label);
-
-    rafId = requestAnimationFrame(animTick);
+    if (t < 1) {
+      setPhaseLabel('拆解中');
+      rafId = requestAnimationFrame(animTick);
+    } else {
+      // 动画完成：定格在爆炸状态，按钮恢复可点
+      setPhaseLabel('已展开');
+      demoRunning = false;
+      rafId = null;
+      demoBtn.classList.remove('on');
+      demoLabel.textContent = '拆解演示';
+      btnAssembled.classList.remove('on'); // 已不在成品态
+    }
   }
 
   function startDemo() {
@@ -315,6 +294,7 @@
       grabNodes();
       return;
     }
+    snapToState('assembled'); // 从组装态开始播放，避免重复点击无动画
     demoRunning = true;
     demoStart = performance.now();
     demoBtn.classList.add('on');
