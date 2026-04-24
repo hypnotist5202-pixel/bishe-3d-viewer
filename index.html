@@ -9,11 +9,8 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='25' font-size='24'%3E%E2%9A%AA%3C/text%3E%3C/svg%3E">
 
 <script>
-  // 本地开发时用相对路径，线上用 jsDelivr CDN（deploy.sh 会把 hash pin 到当前 commit）
-  window.__IS_LOCAL__ = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-  window.__CDN_BASE__ = window.__IS_LOCAL__
-    ? './assets'
-    : 'https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@ae74b71/assets';
+  // 强制走 jsDelivr CDN — 绝对零本地依赖（deploy.sh 自动 pin hash 到当前 commit）
+  window.__CDN_BASE__ = 'https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@ae74b71/assets';
   window.__GLB_COMBINED__ = window.__CDN_BASE__ + '/combined.glb';
   window.__JS_MODELVIEWER__ = window.__CDN_BASE__ + '/model-viewer.min.js';
 </script>
