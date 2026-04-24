@@ -61,7 +61,7 @@
 
 <header>
   <button class="btn on" id="btnAssembled" disabled>成品</button>
-  <button class="btn play" id="demoBtn" disabled><span class="dot"></span><span id="demoLabel">按压出药</span></button>
+  <button class="btn play" id="demoBtn" disabled><span class="dot"></span><span id="demoLabel">拆解演示</span></button>
 </header>
 
 <div class="stage">
@@ -247,20 +247,19 @@
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // 按压出药演示 · 每轮 5.3s
-  //   wait (0.8s)     待机，模型静止
-  //   press (0.6s)    上盖被按压下压 3mm 再回弹（像按按钮）
-  //   mechanism(2.4s) 齿轮 + 齿轴旋转 1 圈，送药器沿 X 推出 18mm
-  //   release (1.5s)  送药器回位，齿轮继续微转收尾
-  // 所有阶段模型保持"成品"状态（零件不分离）
+  // 拆解演示 · 每轮 7s
+  //   explode  2.0s   零件从成品 → 纵向爆炸（缓入缓出）
+  //   hold     1.8s   停在爆炸状态让零件看清
+  //   assemble 2.0s   从爆炸 → 合体
+  //   idle     1.2s   成品展示完整外形
   // ═══════════════════════════════════════════════════════════════
   const easeInOut = t => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2) / 2;
 
   const PHASES = [
-    { name: 'wait',      dur:  800, label: '待触发' },
-    { name: 'press',     dur:  600, label: '按压' },
-    { name: 'mechanism', dur: 2400, label: '出药中' },
-    { name: 'release',   dur: 1500, label: '回位' },
+    { name: 'explode',  dur: 2000, label: '拆解' },
+    { name: 'hold',     dur: 1800, label: '展示' },
+    { name: 'assemble', dur: 2000, label: '合体' },
+    { name: 'idle',     dur: 1200, label: '成品' },
   ];
 
   let rafId = null;
@@ -290,44 +289,16 @@
       acc += p.dur;
     }
 
-    // 所有阶段维持成品状态（零件不分离）
-    lerpToState(0);
+    // 零件爆炸度 0..1
+    let explodeAmount = 0;
+    if (phase.name === 'explode')       explodeAmount = easeInOut(phaseT);
+    else if (phase.name === 'hold')     explodeAmount = 1;
+    else if (phase.name === 'assemble') explodeAmount = 1 - easeInOut(phaseT);
+    else /* idle */                     explodeAmount = 0;
+    lerpToState(explodeAmount);
 
-    // —— 外壳透明度（press 阶段开始淡化，mechanism 全透，release 逐渐恢复）
-    let shellOpacity = 1.0;
-    if (phase.name === 'wait') shellOpacity = 1.0;
-    else if (phase.name === 'press') shellOpacity = 1.0 - easeInOut(phaseT) * 0.75; // 1 → 0.25
-    else if (phase.name === 'mechanism') shellOpacity = 0.25;
-    else if (phase.name === 'release') shellOpacity = 0.25 + easeInOut(phaseT) * 0.75; // 0.25 → 1
-    setShellOpacity(shellOpacity);
-
-    // —— 上盖按压动作（仅 press 阶段）
-    if (phase.name === 'press') {
-      // 0→0.5 下压，0.5→1 回弹
-      const pressAmt = phaseT < 0.5 ? phaseT * 2 : (1 - phaseT) * 2;
-      setPartPos('cap', 0, -pressAmt * 0.003, 0); // 下压 3mm
-    } else {
-      setPartPos('cap', 0, 0, 0);
-    }
-
-    // —— 齿轮 + 齿轴旋转（mechanism + release 连续，共 3.9s 转 1 圈 + release 微调）
-    let gearAngle = 0;
-    if (phase.name === 'mechanism') {
-      gearAngle = easeInOut(phaseT) * Math.PI * 2; // 0 → 1 圈
-    } else if (phase.name === 'release') {
-      gearAngle = Math.PI * 2 + phaseT * Math.PI * 0.3; // 继续转 54°
-    }
-    setPartRotation('gear',  0, gearAngle, 0);
-    setPartRotation('shaft', 0, gearAngle, 0);
-
-    // —— 送药器推出 + 回位（单程推出 → 回位）
-    let pushAmt = 0;
-    if (phase.name === 'mechanism') {
-      pushAmt = easeInOut(phaseT); // 0 → 1 (推出)
-    } else if (phase.name === 'release') {
-      pushAmt = 1 - easeInOut(phaseT); // 1 → 0 (回位)
-    }
-    setPartPos('pusher', pushAmt * 0.018, 0, 0); // 推出 18mm
+    // 确保外壳全不透明（删除透明度效果，拆解模式下零件已经分离看得清）
+    setShellOpacity(1.0);
 
     requestRender();
 
@@ -358,9 +329,9 @@
     if (rafId) cancelAnimationFrame(rafId);
     rafId = null;
     demoBtn.classList.remove('on');
-    demoLabel.textContent = '按压出药';
+    demoLabel.textContent = '拆解演示';
     setPhaseLabel('');
-    setShellOpacity(1.0); // 确保停演示时外壳恢复不透明
+    setShellOpacity(1.0);
     requestRender();
   }
 
