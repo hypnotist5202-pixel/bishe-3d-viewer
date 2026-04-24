@@ -25,7 +25,7 @@ const MAT = {
   '底座':   { name: 'pg-petg-black-matte',  color: [0.13, 0.13, 0.14, 1], metallic: 0.0,  roughness: 0.9, killSpecular: true }, // 黑哑光 + 关菲涅尔
   '限位环': { name: 'pg-petg-black-matte',  color: [0.13, 0.13, 0.14, 1], metallic: 0.0,  roughness: 0.9, killSpecular: true },
   '药仓':   { name: 'pg-petg-white',        color: [0.92, 0.92, 0.90, 1], metallic: 0.0,  roughness: 0.25 }, // 白光面 PETG
-  '限位盘': { name: 'pg-petg-gray-light',   color: [0.72, 0.72, 0.72, 1], metallic: 0.0,  roughness: 0.35 }, // 灰白 PETG（与药仓白做区分）
+  '限位盘': { name: 'pg-petg-gray-mid',     color: [0.55, 0.55, 0.55, 1], metallic: 0.0,  roughness: 0.5 }, // 中灰 PETG（与药仓白明显差 40%）
   '送药器': { name: 'pg-petg-brown',        color: [0.42, 0.25, 0.14, 1], metallic: 0.02, roughness: 0.30 }, // 棕光面 PETG
   '齿轴':   { name: 'pg-brass-brushed',     color: [0.80, 0.60, 0.25, 1], metallic: 0.95, roughness: 0.48 }, // 磨砂黄铜
   '齿轮':   { name: 'pg-brass-brushed',     color: [0.80, 0.60, 0.25, 1], metallic: 0.95, roughness: 0.48 },
