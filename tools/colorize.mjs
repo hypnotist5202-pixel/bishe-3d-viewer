@@ -41,9 +41,16 @@ const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
 const doc = await io.read(input);
 const root = doc.getRoot();
 const meshes = root.listMeshes();
+const allNodes = root.listNodes();
 const specularExt = doc.createExtension(KHRMaterialsSpecular);
 
-// 为每种材质创建共享 Material，按零件名映射上色
+// 节点名 ASCII key（中文在 glb 里有概率被某些 tooling 截断，ASCII 更稳）
+const PART_KEY = {
+  '上盖': 'cap', '药仓': 'chamber', '限位环': 'ring', '限位盘': 'disc',
+  '送药器': 'pusher', '齿轴': 'shaft', '齿轮': 'gear', '底座': 'base',
+};
+
+// 为每种材质创建共享 Material，按零件名映射上色 + 同时给 node 命名（供前端按名查找）
 const matCache = {};
 let colored = 0;
 
@@ -69,8 +76,15 @@ for (const [partName, indices] of Object.entries(PART_MAP)) {
   }
   const mat = matCache[spec.name];
   mesh.listPrimitives().forEach(p => p.setMaterial(mat));
+
+  // 给引用此 mesh 的 node 命名，同时给 mesh 本身命名（双保险）
+  const partKey = PART_KEY[partName] || partName;
+  mesh.setName(partKey);
+  const node = allNodes.find(n => n.getMesh() === mesh);
+  if (node) node.setName(partKey);
+
   const tag = spec.killSpecular ? '[kill-specular]' : '';
-  console.log(`  ✓ ${partName.padEnd(4)} → mesh[${meshIdx}] 材质=${spec.name} ${tag}`);
+  console.log(`  ✓ ${partName.padEnd(4)} → mesh[${meshIdx}] node="${partKey}" 材质=${spec.name} ${tag}`);
   colored++;
 }
 

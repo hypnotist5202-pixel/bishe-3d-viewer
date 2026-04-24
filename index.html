@@ -8,10 +8,15 @@
 <meta http-equiv="Pragma" content="no-cache">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='25' font-size='24'%3E%E2%9A%AA%3C/text%3E%3C/svg%3E">
 
-<!-- 关键资源从 jsDelivr CDN 拉（国内直连比 github.io 快 5 倍） -->
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@deaedff/assets/model-viewer.min.js" crossorigin fetchpriority="high">
-<link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@deaedff/assets/combined.glb" crossorigin="anonymous" fetchpriority="high">
-<link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@deaedff/assets/exploded-v.glb" crossorigin="anonymous">
+<script>
+  // 本地开发时用相对路径，线上用 jsDelivr CDN（deploy.sh 会把 hash pin 到当前 commit）
+  window.__IS_LOCAL__ = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  window.__CDN_BASE__ = window.__IS_LOCAL__
+    ? './assets'
+    : 'https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@f7328a5/assets';
+  window.__GLB_COMBINED__ = window.__CDN_BASE__ + '/combined.glb';
+  window.__JS_MODELVIEWER__ = window.__CDN_BASE__ + '/model-viewer.min.js';
+</script>
 <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
 <title>无障碍药盒 · 3D 预览 | 欧阳天麒</title>
@@ -26,7 +31,6 @@
   .btn.on { background: #f2f2f2; color: #0b0b0b; border-color: #f2f2f2; box-shadow: 0 6px 18px rgba(255,255,255,.08); }
   .btn[disabled] { opacity: .5; cursor: wait; }
 
-  /* 演示按钮：橙色强调，和品牌 PETG 橙色呼应 */
   .btn.play { background: rgba(242, 115, 28, .14); border-color: rgba(242, 115, 28, .35); color: #f2731c; }
   .btn.play.on { background: #f2731c; color: #0b0b0b; border-color: #f2731c; box-shadow: 0 6px 20px rgba(242, 115, 28, .35); }
   .btn.play .dot { display: inline-block; width: 7px; height: 7px; border-radius: 999px; background: currentColor; margin-right: 6px; vertical-align: middle; animation: pulse 1.2s ease-in-out infinite; opacity: 0; }
@@ -36,7 +40,10 @@
   .stage { position: relative; overflow: hidden; background: radial-gradient(ellipse at center, #181818 0%, #0b0b0b 70%); }
   model-viewer { width: 100%; height: 100%; background: transparent; display: block; }
 
-  /* 全屏居中加载 overlay */
+  /* 阶段提示（右下角） */
+  .phase { position: absolute; right: 14px; bottom: 14px; font-size: 11px; color: #888; letter-spacing: .2em; text-transform: uppercase; padding: 6px 12px; background: rgba(0,0,0,.45); border-radius: 999px; backdrop-filter: blur(10px); opacity: 0; transition: opacity .3s ease; pointer-events: none; }
+  .phase.show { opacity: 1; }
+
   .loader { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; pointer-events: none; transition: opacity .4s ease; z-index: 5; }
   .loader.done { opacity: 0; pointer-events: none; }
   .ring { position: relative; width: 92px; height: 92px; }
@@ -48,15 +55,14 @@
   .loader-stage { font-size: 11px; color: #555; letter-spacing: .14em; margin-top: -14px; }
 
   footer { text-align: center; padding: 10px 10px 16px; font-size: 11px; color: #555; letter-spacing: .18em; text-transform: uppercase; }
-
 </style>
 </head>
 <body>
 
 <header>
-  <button class="btn on" data-view="combined" data-src="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@deaedff/assets/combined.glb" disabled>成品</button>
-  <button class="btn" data-view="exploded-v" data-src="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@deaedff/assets/exploded-v.glb" disabled>纵向拆解</button>
-  <button class="btn play" id="demoBtn" disabled><span class="dot"></span><span id="demoLabel">演示动画</span></button>
+  <button class="btn on" id="btnAssembled" disabled>成品</button>
+  <button class="btn" id="btnExploded" disabled>零件拆解</button>
+  <button class="btn play" id="demoBtn" disabled><span class="dot"></span><span id="demoLabel">出药流程</span></button>
 </header>
 
 <div class="stage">
@@ -73,14 +79,14 @@
     shadow-intensity="1.3"
     shadow-softness="0.7"
     exposure="0.85"
-    bounds="tight"
-    camera-orbit="25deg 68deg 95%"
-    field-of-view="30deg"
+    camera-orbit="25deg 68deg 0.45m"
+    field-of-view="28deg"
     interpolation-decay="200"
-    rotation-per-second="18deg"
-    min-camera-orbit="auto auto 55%"
-    max-camera-orbit="auto auto 260%">
+    min-camera-orbit="auto auto 0.2m"
+    max-camera-orbit="auto auto 1m">
   </model-viewer>
+
+  <div class="phase" id="phaseLabel"></div>
 
   <div class="loader" id="loader">
     <div class="ring">
@@ -97,9 +103,16 @@
 
 <footer>欧阳天麒 · 无障碍药盒 · 浙江理工大学产品设计 2026</footer>
 
-<!-- model-viewer JS 从 jsDelivr CDN 加载（国内加速） -->
-<script type="module" async crossorigin src="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@deaedff/assets/model-viewer.min.js"
-  onerror="document.getElementById('loaderStage').textContent = '✗ 引擎下载失败，请刷新或检查网络'"></script>
+<script>
+  // 动态注入 model-viewer script tag
+  (() => {
+    const s = document.createElement('script');
+    s.type = 'module'; s.async = true; s.crossOrigin = 'anonymous';
+    s.src = window.__JS_MODELVIEWER__;
+    s.onerror = () => { document.getElementById('loaderStage').textContent = '✗ 引擎下载失败，请刷新或检查网络'; };
+    document.head.appendChild(s);
+  })();
+</script>
 
 <script>
 (() => {
@@ -108,7 +121,9 @@
   const ringFg = document.getElementById('ringFg');
   const pctEl = document.getElementById('pct');
   const stageEl = document.getElementById('loaderStage');
-  const viewBtns = document.querySelectorAll('header .btn[data-view]');
+  const phaseLabel = document.getElementById('phaseLabel');
+  const btnAssembled = document.getElementById('btnAssembled');
+  const btnExploded = document.getElementById('btnExploded');
   const demoBtn = document.getElementById('demoBtn');
   const demoLabel = document.getElementById('demoLabel');
   const CIRCUM = 276;
@@ -116,76 +131,232 @@
   let jsLoaded = false;
   let glbLoaded = false;
 
+  // ═══════════════════════════════════════════════════════════════
+  // 爆炸位移 delta（由 tools/export-deltas.mjs 从 Rhino 原 glb 算出）
+  // 单位 m。动画时 group.position = initial + delta * explodeAmount
+  // ═══════════════════════════════════════════════════════════════
+  const EXPLODE_DELTA = {
+    cap:     [0,         0.08445,  0],
+    chamber: [0,         0.04359,  0],
+    disc:    [0,         0.00172,  0],
+    ring:    [0,        -0.05939,  0],
+    gear:    [-0.01671, -0.08884,  0],
+    shaft:   [ 0.00329, -0.09202,  0],
+    pusher:  [0,        -0.11537,  0],
+    base:    [0,        -0.14413,  0],
+  };
+  const PART_NAMES = Object.keys(EXPLODE_DELTA);
+  const nodeRefs = {};    // name → three.js Group
+  const initialPos = {};  // name → {x,y,z} 装配状态 position（three.js 读出）
+  const initialRot = {};  // name → {x,y,z} 装配状态 rotation（three.js 读出）
+
+  // ═══════════════════════════════════════════════════════════════
+  // 工具：抓取 model-viewer 内部 scene graph 的 node
+  // model-viewer v4 在 load 后暴露 model[0..N] 或 symbol-ref scene，
+  // 最稳的方法是 traverse 所有 Object3D 按 name 匹配
+  // ═══════════════════════════════════════════════════════════════
+  let mvScene = null; // 缓存 three.js scene 引用，用于 queueRender
+
+  function grabNodes() {
+    // model-viewer v4 把 three.js Scene 放在 Symbol(scene) 上（private API）
+    const sceneSymbol = Object.getOwnPropertySymbols(mv).find(s => String(s) === 'Symbol(scene)');
+    if (!sceneSymbol) return false;
+    mvScene = mv[sceneSymbol];
+    if (!mvScene || typeof mvScene.traverse !== 'function') return false;
+
+    mvScene.traverse((obj) => {
+      if (obj.name && PART_NAMES.includes(obj.name) && !nodeRefs[obj.name]) {
+        nodeRefs[obj.name] = obj;
+        initialPos[obj.name] = { x: obj.position.x, y: obj.position.y, z: obj.position.z };
+        initialRot[obj.name] = { x: obj.rotation.x, y: obj.rotation.y, z: obj.rotation.z };
+      }
+    });
+
+    const found = Object.keys(nodeRefs).length;
+    console.log(`[scene-graph] grabbed ${found}/${PART_NAMES.length} nodes:`, Object.keys(nodeRefs));
+    return found === PART_NAMES.length;
+  }
+
+  function setPartPos(name, dx, dy, dz) {
+    const obj = nodeRefs[name];
+    const init = initialPos[name];
+    if (!obj || !init) return;
+    obj.position.set(init.x + dx, init.y + dy, init.z + dz);
+  }
+
+  function setPartRotation(name, rx, ry, rz) {
+    const obj = nodeRefs[name];
+    const base = initialRot[name];
+    if (!obj || !base) return;
+    obj.rotation.set(base.x + rx, base.y + ry, base.z + rz);
+  }
+
+  function requestRender() {
+    // model-viewer 空闲时会自动 pause；改 Object3D 后必须显式触发重绘
+    if (mvScene && mvScene.queueRender) mvScene.queueRender();
+  }
+
+  function refitCamera() { /* 相机距离固定，不再 auto-frame */ }
+
+  // 把所有零件瞬切到指定状态（assembled / exploded）
+  function snapToState(state) {
+    const t = state === 'exploded' ? 1 : 0;
+    for (const name of PART_NAMES) {
+      const d = EXPLODE_DELTA[name];
+      setPartPos(name, d[0] * t, d[1] * t, d[2] * t);
+      setPartRotation(name, 0, 0, 0);
+    }
+    requestRender();
+  }
+
+  // 渐变插值到指定状态（0=assembled, 1=exploded）
+  function lerpToState(t) {
+    t = Math.max(0, Math.min(1, t));
+    for (const name of PART_NAMES) {
+      const d = EXPLODE_DELTA[name];
+      setPartPos(name, d[0] * t, d[1] * t, d[2] * t);
+    }
+    requestRender();
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 出药流程动画编排
+  // 每轮 8.5s = 拆解 2s → 机械演示 3.5s → 合体 2s → 成品展示 1s
+  // 机械动作（占位·根据零件尺寸合理假设）：
+  //   - 齿轮 绕 Y 轴 顺时针连续转
+  //   - 齿轴 跟齿轮同步（联动）
+  //   - 送药器 沿 X 轴 往复推（模拟推药动作）
+  // ═══════════════════════════════════════════════════════════════
+  const easeInOut = t => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2) / 2;
+
+  const PHASES = [
+    { name: 'explode', dur: 2000, label: '拆解展示' },
+    { name: 'operate', dur: 3500, label: '机械演示' },
+    { name: 'assemble', dur: 2000, label: '合体' },
+    { name: 'idle',    dur: 1000, label: '成品' },
+  ];
+
+  let rafId = null;
+  let demoRunning = false;
+  let demoStart = 0;
+
+  function setPhaseLabel(text) {
+    if (!text) { phaseLabel.classList.remove('show'); return; }
+    phaseLabel.textContent = text;
+    phaseLabel.classList.add('show');
+  }
+
+  function animTick(now) {
+    if (!demoRunning) return;
+    const elapsed = now - demoStart;
+    const cycleDur = PHASES.reduce((s, p) => s + p.dur, 0);
+    const cycleT = elapsed % cycleDur;
+
+    // 找当前阶段
+    let acc = 0, phase = PHASES[0], phaseT = 0;
+    for (const p of PHASES) {
+      if (cycleT < acc + p.dur) {
+        phase = p;
+        phaseT = (cycleT - acc) / p.dur; // 0..1 in phase
+        break;
+      }
+      acc += p.dur;
+    }
+
+    // 零件整体形态（爆炸度 0..1）
+    let explodeAmount = 0;
+    if (phase.name === 'explode')  explodeAmount = easeInOut(phaseT);
+    else if (phase.name === 'operate')  explodeAmount = 1;
+    else if (phase.name === 'assemble') explodeAmount = 1 - easeInOut(phaseT);
+    else if (phase.name === 'idle')     explodeAmount = 0;
+    lerpToState(explodeAmount);
+
+    // 机械动作（仅 operate 阶段激活；其他阶段清零旋转和 pusher 偏移）
+    if (phase.name === 'operate') {
+      const gearAngle = phaseT * Math.PI * 4;
+      setPartRotation('gear',  0, gearAngle, 0);
+      setPartRotation('shaft', 0, gearAngle, 0);
+      const pushT = (phaseT * 2) % 1;
+      const pushAmt = pushT < 0.5 ? pushT * 2 : (1 - pushT) * 2;
+      const d = EXPLODE_DELTA.pusher;
+      setPartPos('pusher', d[0] + pushAmt * 0.018, d[1], d[2]);
+    } else {
+      setPartRotation('gear',  0, 0, 0);
+      setPartRotation('shaft', 0, 0, 0);
+    }
+
+    requestRender();
+
+    // 阶段文字提示
+    setPhaseLabel(phase.label);
+
+    rafId = requestAnimationFrame(animTick);
+  }
+
+  function startDemo() {
+    if (demoRunning || demoBtn.disabled) return;
+    if (Object.keys(nodeRefs).length < PART_NAMES.length) {
+      stageEl.textContent = '节点未就绪，正在重试...';
+      grabNodes();
+      return;
+    }
+    demoRunning = true;
+    demoStart = performance.now();
+    demoBtn.classList.add('on');
+    demoLabel.textContent = '停止演示';
+    btnAssembled.classList.remove('on');
+    btnExploded.classList.remove('on');
+    rafId = requestAnimationFrame(animTick);
+  }
+
+  function stopDemo() {
+    if (!demoRunning) return;
+    demoRunning = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
+    demoBtn.classList.remove('on');
+    demoLabel.textContent = '出药流程';
+    setPhaseLabel('');
+  }
+
+  function setStaticState(state) {
+    stopDemo();
+    snapToState(state);
+    refitCamera();
+    btnAssembled.classList.toggle('on', state === 'assembled');
+    btnExploded.classList.toggle('on', state === 'exploded');
+  }
+
+  // 按钮逻辑
+  btnAssembled.addEventListener('click', () => setStaticState('assembled'));
+  btnExploded.addEventListener('click',  () => setStaticState('exploded'));
+  demoBtn.addEventListener('click', () => {
+    if (demoRunning) { stopDemo(); snapToState('assembled'); btnAssembled.classList.add('on'); }
+    else startDemo();
+  });
+
+  // 用户手动拖动时暂停演示（不 snap，保持当前状态）
+  mv.addEventListener('camera-change', (e) => {
+    if (e.detail && e.detail.source === 'user-interaction' && demoRunning) {
+      stopDemo();
+    }
+  });
+
+  // ═══ Loader 进度 ═══
   function setProgress(p, stage) {
     p = Math.max(0, Math.min(1, p));
     ringFg.style.strokeDashoffset = String(CIRCUM * (1 - p));
     pctEl.textContent = Math.round(p * 100) + '%';
     if (stage) stageEl.textContent = stage;
   }
-
   function hideLoader() {
     setProgress(1);
     setTimeout(() => loader.classList.add('done'), 200);
-    viewBtns.forEach(b => b.disabled = false);
+    btnAssembled.disabled = false;
+    btnExploded.disabled = false;
     demoBtn.disabled = false;
   }
 
-  // 按钮切换（手动切换时自动停止演示）
-  viewBtns.forEach(b => b.addEventListener('click', () => {
-    if (b.classList.contains('on') || b.disabled) return;
-    stopDemo();
-    switchTo(b.dataset.view);
-  }));
-
-  function switchTo(view) {
-    viewBtns.forEach(x => x.classList.toggle('on', x.dataset.view === view));
-    const target = [...viewBtns].find(x => x.dataset.view === view);
-    if (target) mv.setAttribute('src', target.dataset.src);
-  }
-
-  // ═══ 演示动画循环：合体 ↔ 纵向爆炸，配合自动旋转 ═══
-  const DEMO_SEQ = ['combined', 'exploded-v'];
-  const DEMO_INTERVAL = 3200; // 每段停留 3.2s
-  let demoTimer = null;
-  let demoStep = 0;
-
-  function startDemo() {
-    if (demoTimer || demoBtn.disabled) return;
-    demoBtn.classList.add('on');
-    demoLabel.textContent = '停止演示';
-    // 打开自动旋转（model-viewer 自带）
-    mv.setAttribute('auto-rotate', '');
-    mv.setAttribute('auto-rotate-delay', '0');
-    // 从当前视图的"下一个"开始切
-    const curBtn = [...viewBtns].find(x => x.classList.contains('on'));
-    demoStep = curBtn ? DEMO_SEQ.indexOf(curBtn.dataset.view) : 0;
-    demoTimer = setInterval(() => {
-      demoStep = (demoStep + 1) % DEMO_SEQ.length;
-      switchTo(DEMO_SEQ[demoStep]);
-    }, DEMO_INTERVAL);
-  }
-
-  function stopDemo() {
-    if (!demoTimer) return;
-    clearInterval(demoTimer);
-    demoTimer = null;
-    mv.removeAttribute('auto-rotate');
-    demoBtn.classList.remove('on');
-    demoLabel.textContent = '演示动画';
-  }
-
-  demoBtn.addEventListener('click', () => {
-    demoTimer ? stopDemo() : startDemo();
-  });
-
-  // 用户手动拖拽模型时暂停演示（避免抢相机控制）
-  mv.addEventListener('camera-change', (e) => {
-    if (e.detail && e.detail.source === 'user-interaction' && demoTimer) {
-      stopDemo();
-    }
-  });
-
-  // model-viewer progress 事件（glb 下载+解析）
   mv.addEventListener('progress', (e) => {
     const p = e.detail.totalProgress || 0;
     const displayed = jsLoaded ? (0.3 + p * 0.7) : 0.3 * p;
@@ -194,10 +365,17 @@
   mv.addEventListener('load', () => {
     glbLoaded = true;
     if (mv.updateFraming) mv.updateFraming();
-    hideLoader();
+    // 抓 node 引用（多次尝试，model-viewer 可能延迟 attach）
+    const tryGrab = (attempts = 0) => {
+      if (grabNodes() || attempts >= 10) {
+        hideLoader();
+        return;
+      }
+      setTimeout(() => tryGrab(attempts + 1), 100);
+    };
+    tryGrab();
   }, { once: true });
 
-  // JS 加载进度监控：轮询 customElements
   let jsProgress = 0;
   const jsTick = setInterval(() => {
     jsProgress = Math.min(0.28, jsProgress + 0.015);
@@ -212,13 +390,12 @@
       jsLoaded = true;
       clearInterval(jsTick);
       setProgress(0.3, '引擎就绪，载入模型...');
-      mv.setAttribute('src', 'https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@deaedff/assets/combined.glb');
+      mv.setAttribute('src', window.__GLB_COMBINED__);
     } catch (e) {
       stageEl.textContent = '引擎加载失败，请用浏览器打开';
     }
   })();
 
-  // 超时降级（20 秒）
   setTimeout(() => {
     if (!glbLoaded) {
       stageEl.innerHTML = '网络较慢，建议用<br>浏览器打开（右上···菜单）';
