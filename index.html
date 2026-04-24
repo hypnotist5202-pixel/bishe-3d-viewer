@@ -12,7 +12,6 @@
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@f7328a5/assets/model-viewer.min.js" crossorigin fetchpriority="high">
 <link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@f7328a5/assets/combined.glb" crossorigin="anonymous" fetchpriority="high">
 <link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@f7328a5/assets/exploded-v.glb" crossorigin="anonymous">
-<link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@f7328a5/assets/exploded-h.glb" crossorigin="anonymous">
 <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
 <title>无障碍药盒 · 3D 预览 | 欧阳天麒</title>
@@ -26,6 +25,13 @@
   .btn { background: rgba(28,28,28,.86); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid #2a2a2a; color: #c8c8c8; padding: 9px 18px; border-radius: 999px; font: inherit; font-size: 13px; letter-spacing: .04em; cursor: pointer; transition: all .2s ease; white-space: nowrap; }
   .btn.on { background: #f2f2f2; color: #0b0b0b; border-color: #f2f2f2; box-shadow: 0 6px 18px rgba(255,255,255,.08); }
   .btn[disabled] { opacity: .5; cursor: wait; }
+
+  /* 演示按钮：橙色强调，和品牌 PETG 橙色呼应 */
+  .btn.play { background: rgba(242, 115, 28, .14); border-color: rgba(242, 115, 28, .35); color: #f2731c; }
+  .btn.play.on { background: #f2731c; color: #0b0b0b; border-color: #f2731c; box-shadow: 0 6px 20px rgba(242, 115, 28, .35); }
+  .btn.play .dot { display: inline-block; width: 7px; height: 7px; border-radius: 999px; background: currentColor; margin-right: 6px; vertical-align: middle; animation: pulse 1.2s ease-in-out infinite; opacity: 0; }
+  .btn.play.on .dot { opacity: 1; }
+  @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: .6; } }
 
   .stage { position: relative; overflow: hidden; background: radial-gradient(ellipse at center, #181818 0%, #0b0b0b 70%); }
   model-viewer { width: 100%; height: 100%; background: transparent; display: block; }
@@ -48,9 +54,9 @@
 <body>
 
 <header>
-  <button class="btn on" data-src="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@f7328a5/assets/combined.glb" disabled>成品</button>
-  <button class="btn" data-src="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@f7328a5/assets/exploded-v.glb" disabled>纵向拆解</button>
-  <button class="btn" data-src="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@f7328a5/assets/exploded-h.glb" disabled>横向分布</button>
+  <button class="btn on" data-view="combined" data-src="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@f7328a5/assets/combined.glb" disabled>成品</button>
+  <button class="btn" data-view="exploded-v" data-src="https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@f7328a5/assets/exploded-v.glb" disabled>纵向拆解</button>
+  <button class="btn play" id="demoBtn" disabled><span class="dot"></span><span id="demoLabel">演示动画</span></button>
 </header>
 
 <div class="stage">
@@ -70,6 +76,8 @@
     bounds="tight"
     camera-orbit="25deg 68deg 95%"
     field-of-view="30deg"
+    interpolation-decay="200"
+    rotation-per-second="18deg"
     min-camera-orbit="auto auto 55%"
     max-camera-orbit="auto auto 260%">
   </model-viewer>
@@ -100,7 +108,9 @@
   const ringFg = document.getElementById('ringFg');
   const pctEl = document.getElementById('pct');
   const stageEl = document.getElementById('loaderStage');
-  const btns = document.querySelectorAll('header .btn');
+  const viewBtns = document.querySelectorAll('header .btn[data-view]');
+  const demoBtn = document.getElementById('demoBtn');
+  const demoLabel = document.getElementById('demoLabel');
   const CIRCUM = 276;
 
   let jsLoaded = false;
@@ -116,21 +126,68 @@
   function hideLoader() {
     setProgress(1);
     setTimeout(() => loader.classList.add('done'), 200);
-    btns.forEach(b => b.disabled = false);
+    viewBtns.forEach(b => b.disabled = false);
+    demoBtn.disabled = false;
   }
 
-  // 按钮切换
-  btns.forEach(b => b.addEventListener('click', () => {
+  // 按钮切换（手动切换时自动停止演示）
+  viewBtns.forEach(b => b.addEventListener('click', () => {
     if (b.classList.contains('on') || b.disabled) return;
-    btns.forEach(x => x.classList.remove('on'));
-    b.classList.add('on');
-    mv.setAttribute('src', b.dataset.src);
+    stopDemo();
+    switchTo(b.dataset.view);
   }));
+
+  function switchTo(view) {
+    viewBtns.forEach(x => x.classList.toggle('on', x.dataset.view === view));
+    const target = [...viewBtns].find(x => x.dataset.view === view);
+    if (target) mv.setAttribute('src', target.dataset.src);
+  }
+
+  // ═══ 演示动画循环：合体 ↔ 纵向爆炸，配合自动旋转 ═══
+  const DEMO_SEQ = ['combined', 'exploded-v'];
+  const DEMO_INTERVAL = 3200; // 每段停留 3.2s
+  let demoTimer = null;
+  let demoStep = 0;
+
+  function startDemo() {
+    if (demoTimer || demoBtn.disabled) return;
+    demoBtn.classList.add('on');
+    demoLabel.textContent = '停止演示';
+    // 打开自动旋转（model-viewer 自带）
+    mv.setAttribute('auto-rotate', '');
+    mv.setAttribute('auto-rotate-delay', '0');
+    // 从当前视图的"下一个"开始切
+    const curBtn = [...viewBtns].find(x => x.classList.contains('on'));
+    demoStep = curBtn ? DEMO_SEQ.indexOf(curBtn.dataset.view) : 0;
+    demoTimer = setInterval(() => {
+      demoStep = (demoStep + 1) % DEMO_SEQ.length;
+      switchTo(DEMO_SEQ[demoStep]);
+    }, DEMO_INTERVAL);
+  }
+
+  function stopDemo() {
+    if (!demoTimer) return;
+    clearInterval(demoTimer);
+    demoTimer = null;
+    mv.removeAttribute('auto-rotate');
+    demoBtn.classList.remove('on');
+    demoLabel.textContent = '演示动画';
+  }
+
+  demoBtn.addEventListener('click', () => {
+    demoTimer ? stopDemo() : startDemo();
+  });
+
+  // 用户手动拖拽模型时暂停演示（避免抢相机控制）
+  mv.addEventListener('camera-change', (e) => {
+    if (e.detail && e.detail.source === 'user-interaction' && demoTimer) {
+      stopDemo();
+    }
+  });
 
   // model-viewer progress 事件（glb 下载+解析）
   mv.addEventListener('progress', (e) => {
     const p = e.detail.totalProgress || 0;
-    // JS 已就绪之后，进度映射到 30%~100%
     const displayed = jsLoaded ? (0.3 + p * 0.7) : 0.3 * p;
     setProgress(displayed, p < 1 ? '载入模型 ' + Math.round(p*100) + '%' : '渲染中...');
   });

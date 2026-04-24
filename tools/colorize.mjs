@@ -1,23 +1,22 @@
 #!/usr/bin/env node
-// 按零件名精准上色（跨三个 glb 的同一零件保持一致材质）
-// 用法: node tools/colorize.mjs <combined|exploded-v|exploded-h> <input.glb> <output.glb>
+// 按零件名精准上色（跨两个 glb 的同一零件保持一致材质）
+// 用法: node tools/colorize.mjs <combined|exploded-v> <input.glb> <output.glb>
 
 import { NodeIO } from '@gltf-transform/core';
 import { prune, dedup } from '@gltf-transform/functions';
 import { ALL_EXTENSIONS, KHRMaterialsSpecular } from '@gltf-transform/extensions';
 import { writeFileSync } from 'node:fs';
 
-// 零件 → 三个 glb 的 mesh index 映射（V 数指纹识别得出）
+// 零件 → 两个 glb 的 mesh index 映射（V 数指纹识别得出 · 2026-04-24 更新：盖子改款）
 const PART_MAP = {
-  '上盖':   { 'combined': 2, 'exploded-v': 5, 'exploded-h': 0 },
-  '药仓':   { 'combined': 8, 'exploded-v': 6, 'exploded-h': 4 },
-  '限位环': { 'combined': 3, 'exploded-v': 4, 'exploded-h': 6 },
-  '限位盘': { 'combined': 7, 'exploded-v': 3, 'exploded-h': 5 },
-  '送药器': { 'combined': 6, 'exploded-v': 2, 'exploded-h': 3 },
-  '齿轴':   { 'combined': 4, 'exploded-v': 1, 'exploded-h': 2 },
-  '齿轮':   { 'combined': 5, 'exploded-v': 0, 'exploded-h': 1 },
-  '底座':   { 'combined': 1, 'exploded-v': 7, 'exploded-h': 8 },
-  '药片':   { 'combined': 0, 'exploded-v': null, 'exploded-h': 7 },
+  '上盖':   { 'combined': 0, 'exploded-v': 1 }, // V=10704
+  '药仓':   { 'combined': 7, 'exploded-v': 0 }, // V=21174
+  '限位环': { 'combined': 2, 'exploded-v': 5 }, // V=7406
+  '限位盘': { 'combined': 6, 'exploded-v': 2 }, // V=4983
+  '送药器': { 'combined': 5, 'exploded-v': 6 }, // V=8305
+  '齿轴':   { 'combined': 3, 'exploded-v': 3 }, // V=196
+  '齿轮':   { 'combined': 4, 'exploded-v': 4 }, // V=1872
+  '底座':   { 'combined': 1, 'exploded-v': 7 }, // V=15362
 };
 
 // PBR 材质参数（用户指定 2026-04-18）
@@ -30,12 +29,11 @@ const MAT = {
   '送药器': { name: 'pg-petg-gray-gloss',   color: [0.55, 0.55, 0.58, 1], metallic: 0.02, roughness: 0.22 }, // 灰光面 PETG
   '齿轴':   { name: 'pg-brass-brushed',     color: [0.80, 0.60, 0.25, 1], metallic: 0.95, roughness: 0.48 }, // 磨砂黄铜
   '齿轮':   { name: 'pg-brass-brushed',     color: [0.80, 0.60, 0.25, 1], metallic: 0.95, roughness: 0.48 },
-  '药片':   { name: 'pg-pill-white',        color: [0.96, 0.96, 0.94, 1], metallic: 0.0,  roughness: 0.60 }, // 白色药片
 };
 
 const [,, fileKey, input, output] = process.argv;
 if (!fileKey || !input || !output) {
-  console.error('用法: node colorize.mjs <combined|exploded-v|exploded-h> <input.glb> <output.glb>');
+  console.error('用法: node colorize.mjs <combined|exploded-v> <input.glb> <output.glb>');
   process.exit(1);
 }
 

@@ -7,9 +7,8 @@ import { NodeIO } from '@gltf-transform/core';
 import { prune } from '@gltf-transform/functions';
 
 const files = [
-  { name: 'exploded-v (纵向)', path: '/Volumes/互通/毕设爆炸-纵向拆解.glb' },
-  { name: 'combined  (装配)', path: '/Volumes/互通/毕设拟合.glb' },
-  { name: 'exploded-h (横向)', path: '/Volumes/互通/毕设爆炸-横向分布.glb' },
+  { name: 'exploded-v (纵向)', path: '/Volumes/互通/纵向拆解.glb' },
+  { name: 'combined  (装配)', path: '/Volumes/互通/拟合.glb' },
 ];
 
 const io = new NodeIO();
@@ -59,26 +58,21 @@ vList.forEach((d, rank) => {
   console.log(`  [上→下#${rank+1}] mesh[${d.idx}] V=${String(d.V).padStart(5)} Y中心=${d.cy.toFixed(3)} 尺寸(x×y×z)=(${d.sx.toFixed(3)}×${d.sy.toFixed(3)}×${d.sz.toFixed(3)})`);
 });
 
-// 输出其他两个文件按 mesh idx
-for (const name of ['combined  (装配)', 'exploded-h (横向)']) {
-  console.log(`\n═════ ${name} (按 mesh idx 列出，用 V 数匹配同一零件) ═════`);
-  results[name].forEach(d => {
-    console.log(`  mesh[${d.idx}] V=${String(d.V).padStart(5)} 中心(${d.cx.toFixed(2)},${d.cy.toFixed(2)},${d.cz.toFixed(2)}) 尺寸=(${d.sx.toFixed(3)}×${d.sy.toFixed(3)}×${d.sz.toFixed(3)})`);
-  });
-}
+// 输出 combined 按 mesh idx
+console.log(`\n═════ combined (装配) (按 mesh idx 列出，用 V 数匹配同一零件) ═════`);
+results['combined  (装配)'].forEach(d => {
+  console.log(`  mesh[${d.idx}] V=${String(d.V).padStart(5)} 中心(${d.cx.toFixed(2)},${d.cy.toFixed(2)},${d.cz.toFixed(2)}) 尺寸=(${d.sx.toFixed(3)}×${d.sy.toFixed(3)}×${d.sz.toFixed(3)})`);
+});
 
-// 跨文件匹配表：按 V 数把三个文件的 mesh 串起来
+// 跨文件匹配表：按 V 数把两个文件的 mesh 串起来
 console.log('\n═════ 跨文件零件匹配表（按 V 数唯一指纹） ═════');
-console.log('  V数      exploded-v  combined    exploded-h');
+console.log('  V数      exploded-v  combined');
 const vData = results['exploded-v (纵向)'];
 const cData = results['combined  (装配)'];
-const hData = results['exploded-h (横向)'];
-// 按 V 从大到小（通常大零件更重要，先列）
-const allVs = [...new Set([...vData, ...cData, ...hData].map(d => d.V))].sort((a,b) => b-a);
+const allVs = [...new Set([...vData, ...cData].map(d => d.V))].sort((a,b) => b-a);
 for (const V of allVs) {
   const vi = vData.find(d => d.V === V);
   const ci = cData.find(d => d.V === V);
-  const hi = hData.find(d => d.V === V);
   const fmt = (x) => x ? `mesh[${x.idx}]`.padEnd(10) : '(无)      ';
-  console.log(`  ${String(V).padStart(5)}    ${fmt(vi)}  ${fmt(ci)}  ${fmt(hi)}`);
+  console.log(`  ${String(V).padStart(5)}    ${fmt(vi)}  ${fmt(ci)}`);
 }
