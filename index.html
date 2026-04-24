@@ -9,12 +9,17 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='25' font-size='24'%3E%E2%9A%AA%3C/text%3E%3C/svg%3E">
 
 <script>
-  // 强制走 jsDelivr CDN — 绝对零本地依赖（deploy.sh 自动 pin hash 到当前 commit）
-  window.__CDN_BASE__ = 'https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@3115007/assets';
-  window.__GLB_COMBINED__ = window.__CDN_BASE__ + '/combined.glb';
-  window.__JS_MODELVIEWER__ = window.__CDN_BASE__ + '/model-viewer.min.js';
+  // 多层 CDN 兜底：主 CDN 挂 → 备用 CDN → GitHub Pages 同域
+  // deploy.sh 会自动 pin 所有 @xxx hash 到当前 commit
+  window.__CDN_BASES__ = [
+    'https://cdn.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@3115007/assets',
+    'https://fastly.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@3115007/assets',
+    'https://gcore.jsdelivr.net/gh/hypnotist5202-pixel/bishe-3d-viewer@3115007/assets',
+    './assets' // GitHub Pages 同域兜底 — 所有 CDN 都挂时仍可工作
+  ];
 </script>
 <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+<link rel="dns-prefetch" href="https://fastly.jsdelivr.net">
 
 <title>无障碍药盒 · 3D 预览 | 欧阳天麒</title>
 <style>
@@ -100,13 +105,26 @@
 <footer>欧阳天麒 · 无障碍药盒 · 浙江理工大学产品设计 2026</footer>
 
 <script>
-  // 动态注入 model-viewer script tag
+  // 动态注入 model-viewer script — 带 CDN fallback（主挂了自动切备用）
   (() => {
-    const s = document.createElement('script');
-    s.type = 'module'; s.async = true; s.crossOrigin = 'anonymous';
-    s.src = window.__JS_MODELVIEWER__;
-    s.onerror = () => { document.getElementById('loaderStage').textContent = '✗ 引擎下载失败，请刷新或检查网络'; };
-    document.head.appendChild(s);
+    const bases = window.__CDN_BASES__;
+    let idx = 0;
+    function tryLoad() {
+      if (idx >= bases.length) {
+        document.getElementById('loaderStage').textContent = '✗ 引擎下载失败，请换网络或刷新';
+        return;
+      }
+      const s = document.createElement('script');
+      s.type = 'module'; s.async = true; s.crossOrigin = 'anonymous';
+      s.src = bases[idx] + '/model-viewer.min.js';
+      s.onerror = () => {
+        console.warn('[cdn-fallback] script', bases[idx], '失败, 切下一个');
+        document.head.removeChild(s);
+        idx++; tryLoad();
+      };
+      document.head.appendChild(s);
+    }
+    tryLoad();
   })();
 </script>
 
@@ -358,6 +376,21 @@
     tryGrab();
   }, { once: true });
 
+  // GLB 加载失败时切下一个 CDN 重试
+  let glbCdnIdx = 0;
+  mv.addEventListener('error', (e) => {
+    if (glbLoaded) return;
+    glbCdnIdx++;
+    if (glbCdnIdx < window.__CDN_BASES__.length) {
+      const next = window.__CDN_BASES__[glbCdnIdx] + '/combined.glb';
+      console.warn('[cdn-fallback] GLB', mv.getAttribute('src'), '失败, 切', next);
+      setProgress(0.3, '换 CDN 重试...');
+      mv.setAttribute('src', next);
+    } else {
+      stageEl.innerHTML = '所有 CDN 都无法访问<br>请检查网络';
+    }
+  });
+
   let jsProgress = 0;
   const jsTick = setInterval(() => {
     jsProgress = Math.min(0.28, jsProgress + 0.015);
@@ -372,7 +405,7 @@
       jsLoaded = true;
       clearInterval(jsTick);
       setProgress(0.3, '引擎就绪，载入模型...');
-      mv.setAttribute('src', window.__GLB_COMBINED__);
+      mv.setAttribute('src', window.__CDN_BASES__[0] + '/combined.glb');
     } catch (e) {
       stageEl.textContent = '引擎加载失败，请用浏览器打开';
     }
