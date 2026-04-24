@@ -155,6 +155,10 @@
   // ═══════════════════════════════════════════════════════════════
   let mvScene = null; // 缓存 three.js scene 引用，用于 queueRender
 
+  // 外壳零件（演示时需要半透明让内部机械可见）
+  const SHELL_PARTS = ['cap', 'chamber', 'base'];
+  const partMaterials = {}; // name → [Material, ...]
+
   function grabNodes() {
     // model-viewer v4 把 three.js Scene 放在 Symbol(scene) 上（private API）
     const sceneSymbol = Object.getOwnPropertySymbols(mv).find(s => String(s) === 'Symbol(scene)');
@@ -170,9 +174,34 @@
       }
     });
 
+    // 给外壳零件克隆独立材质，这样 opacity 可以单独调（不影响共享材质的其他零件）
+    for (const name of SHELL_PARTS) {
+      const group = nodeRefs[name];
+      if (!group) continue;
+      const mats = [];
+      group.traverse((c) => {
+        if (c.isMesh && c.material) {
+          c.material = c.material.clone();
+          c.material.transparent = true;
+          mats.push(c.material);
+        }
+      });
+      partMaterials[name] = mats;
+    }
+
     const found = Object.keys(nodeRefs).length;
-    console.log(`[scene-graph] grabbed ${found}/${PART_NAMES.length} nodes:`, Object.keys(nodeRefs));
+    console.log(`[scene-graph] grabbed ${found}/${PART_NAMES.length} nodes, cloned ${Object.keys(partMaterials).length} shell material sets`);
     return found === PART_NAMES.length;
+  }
+
+  function setShellOpacity(op) {
+    for (const mats of Object.values(partMaterials)) {
+      for (const m of mats) {
+        m.opacity = op;
+        // depthWrite 关掉避免透明互相遮挡的排序问题
+        m.depthWrite = op >= 0.99;
+      }
+    }
   }
 
   function setPartPos(name, dx, dy, dz) {
@@ -264,6 +293,14 @@
     // 所有阶段维持成品状态（零件不分离）
     lerpToState(0);
 
+    // —— 外壳透明度（press 阶段开始淡化，mechanism 全透，release 逐渐恢复）
+    let shellOpacity = 1.0;
+    if (phase.name === 'wait') shellOpacity = 1.0;
+    else if (phase.name === 'press') shellOpacity = 1.0 - easeInOut(phaseT) * 0.75; // 1 → 0.25
+    else if (phase.name === 'mechanism') shellOpacity = 0.25;
+    else if (phase.name === 'release') shellOpacity = 0.25 + easeInOut(phaseT) * 0.75; // 0.25 → 1
+    setShellOpacity(shellOpacity);
+
     // —— 上盖按压动作（仅 press 阶段）
     if (phase.name === 'press') {
       // 0→0.5 下压，0.5→1 回弹
@@ -321,8 +358,10 @@
     if (rafId) cancelAnimationFrame(rafId);
     rafId = null;
     demoBtn.classList.remove('on');
-    demoLabel.textContent = '出药流程';
+    demoLabel.textContent = '按压出药';
     setPhaseLabel('');
+    setShellOpacity(1.0); // 确保停演示时外壳恢复不透明
+    requestRender();
   }
 
   function setStaticState(state) {
